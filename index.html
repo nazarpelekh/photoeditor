@@ -1,0 +1,199 @@
+<!doctype html>
+<html class="no-js" lang="">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title></title>
+  <link rel="stylesheet" href="css/style.css">
+  <meta name="description" content="">
+
+  <meta property="og:title" content="">
+  <meta property="og:type" content="">
+  <meta property="og:url" content="">
+  <meta property="og:image" content="">
+
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon.png">
+
+  <link rel="manifest" href="site.webmanifest">
+  <meta name="theme-color" content="#fafafa">
+</head>
+
+<body>
+  <form id="imageForm">
+    <input type="file" id="uploadImage" accept="image/*">
+    <br><br>
+
+    <!-- Radio buttons for logo position -->
+    <label>
+      <input type="radio" name="logoPosition" value="top-left" checked> Logo Top Left
+    </label>
+    <label>
+      <input type="radio" name="logoPosition" value="top-right"> Logo Top Right
+    </label>
+    <label>
+      <input type="radio" name="logoPosition" value="bottom-left"> Logo Bottom Left
+    </label>
+    <label>
+      <input type="radio" name="logoPosition" value="bottom-right"> Logo Bottom Right
+    </label>
+    <br><br>
+
+    <!-- Text field for custom text -->
+    <input type="text" id="customText" placeholder="Enter your text">
+    <br><br>
+
+    <!-- Radio buttons for text position -->
+    <label>
+      <input type="radio" name="textPosition" value="top-left" checked> Text Top Left
+    </label>
+    <label>
+      <input type="radio" name="textPosition" value="top-right"> Text Top Right
+    </label>
+    <label>
+      <input type="radio" name="textPosition" value="bottom-left"> Text Bottom Left
+    </label>
+    <label>
+      <input type="radio" name="textPosition" value="bottom-right"> Text Bottom Right
+    </label>
+    <br><br>
+
+    <canvas id="imageCanvas" style="display:none;"></canvas>
+    <br>
+    <button type="button" id="downloadButton" style="display:none;">Download Processed Image</button>
+  </form>
+
+<!-- Add your site or application content here -->
+  <script>
+    let img, logo;
+
+    document.getElementById('uploadImage').addEventListener('change', function(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        img = new Image();
+        img.onload = function() {
+          logo = new Image();
+          logo.crossOrigin = 'Anonymous'; // Added to avoid CORS issues
+          logo.src = 'https://placehold.co/200x200'; // Your external logo image
+          logo.onload = function() {
+            renderImageWithLogoAndText(); // Initial rendering
+          };
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    // Function to render the image with the logo and text
+    function renderImageWithLogoAndText() {
+      const canvas = document.getElementById('imageCanvas');
+      const ctx = canvas.getContext('2d');
+
+      // Calculate canvas dimensions, ensuring the maximum width and height do not exceed 800px
+      let scaleFactor = 1;
+      if (img.width > 800 || img.height > 800) {
+        scaleFactor = Math.min(800 / img.width, 800 / img.height);
+      }
+
+      const canvasWidth = img.width * scaleFactor;
+      const canvasHeight = img.height * scaleFactor;
+
+      canvas.width = canvasWidth;
+      canvas.height = canvasHeight;
+
+      // Draw the main image, scaled to fit within 800px if necessary
+      ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
+
+      // Get the selected logo position
+      const logoPosition = document.querySelector('input[name="logoPosition"]:checked').value;
+      let logoX, logoY;
+
+      // Determine logo coordinates based on the selected position
+      switch (logoPosition) {
+        case 'top-left':
+          logoX = 10;
+          logoY = 10;
+          break;
+        case 'top-right':
+          logoX = canvasWidth - logo.width - 10;
+          logoY = 10;
+          break;
+        case 'bottom-left':
+          logoX = 10;
+          logoY = canvasHeight - logo.height - 10;
+          break;
+        case 'bottom-right':
+          logoX = canvasWidth - logo.width - 10;
+          logoY = canvasHeight - logo.height - 10;
+          break;
+      }
+
+      // Draw the logo on the image
+      ctx.drawImage(logo, logoX, logoY);
+
+      // Get the custom text and the selected text position
+      const customText = document.getElementById('customText').value;
+      const textPosition = document.querySelector('input[name="textPosition"]:checked').value;
+      let textX, textY;
+
+      // Set text style
+      ctx.font = '20px Arial';
+      ctx.fillStyle = 'white';
+      ctx.textAlign = 'left';
+
+      // Determine text coordinates based on the selected position
+      switch (textPosition) {
+        case 'top-left':
+          textX = 10;
+          textY = 30;
+          break;
+        case 'top-right':
+          ctx.textAlign = 'right';
+          textX = canvasWidth - 10;
+          textY = 30;
+          break;
+        case 'bottom-left':
+          textX = 10;
+          textY = canvasHeight - 10;
+          break;
+        case 'bottom-right':
+          ctx.textAlign = 'right';
+          textX = canvasWidth - 10;
+          textY = canvasHeight - 10;
+          break;
+      }
+
+      // Draw the custom text on the image
+      ctx.fillText(customText, textX, textY);
+
+      // Display the canvas and the download button
+      canvas.style.display = 'block';
+      document.getElementById('downloadButton').style.display = 'block';
+    }
+
+    // Update the image when the logo position or text changes
+    document.querySelectorAll('input[name="logoPosition"], input[name="textPosition"], #customText').forEach(function(input) {
+      input.addEventListener('change', function() {
+        if (img && logo) {
+          renderImageWithLogoAndText();
+        }
+      });
+    });
+
+    document.getElementById('downloadButton').addEventListener('click', function() {
+      const canvas = document.getElementById('imageCanvas');
+      const link = document.createElement('a');
+      link.href = canvas.toDataURL('image/png');
+      link.download = 'processed-image.png';
+      link.click();
+    });
+  </script>
+
+</body>
+
+</html>
