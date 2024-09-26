@@ -683,7 +683,7 @@
   <br><br>
 
   <label for="blurStrength">Blur Strength:</label>
-  <input type="range" id="blurStrength" min="0" max="30" value="10"> <!-- Initial value 10px -->
+  <input type="range" id="blurStrength" min="0" max="100" value="10">
   <br><br>
 
   <!-- Mode selector for choosing between Text and Blur Area -->
@@ -701,18 +701,7 @@
   <br><br>
 
   <!-- Input for custom text -->
-  <input type="text" id="customText" placeholder="Enter your text">
-  <br><br>
-
-  <!-- Select font family -->
-  <label for="fontFamilySelect">Font Family:</label>
-  <select id="fontFamilySelect">
-    <option value="Arial" selected>Arial</option>
-    <option value="Roboto">Roboto</option>
-    <option value="Open Sans">Open Sans</option>
-    <option value="Lato">Lato</option>
-    <option value="Montserrat">Montserrat</option>
-  </select>
+  <textarea id="customTextEditor"></textarea>
   <br><br>
 
   <!-- Font color picker -->
@@ -720,39 +709,18 @@
   <input type="color" id="fontColor" value="#ffffff">
   <br><br>
 
-  <!-- Image overlay checked buttons -->
-<!--  <label>-->
-<!--    <input type="checkbox" name="overlayImage" value="image1"> Image 1 (600x400)-->
-<!--  </label>-->
-<!--  <label>-->
-<!--    <input type="checkbox" name="overlayImage" value="image2"> Image 2 (500x400)-->
-<!--  </label>-->
-<!--  <label>-->
-<!--    <input type="checkbox" name="overlayImage" value="image3"> Image 3 (600x600)-->
-<!--  </label>-->
-<!--  <br><br>-->
-
-
-<!--  &lt;!&ndash; Input for adjusting image transparency &ndash;&gt;-->
-<!--  <label for="imageTransparency">Image Transparency:</label>-->
-<!--  <input type="range" id="imageTransparency" min="0" max="100" value="100">-->
-<!--  <br><br>-->
-
-  <canvas id="imageCanvas" style="display:none; border: 1px solid black;"></canvas>
+  <canvas id="imageCanvas" style="display:none;"></canvas>
   <br>
   <button type="button" id="downloadButton" style="display:none;">Download Processed Image</button>
 </form>
 
-<!-- Google Fonts API -->
-<link href="https://fonts.googleapis.com/css2?family=Lato:wght@400&family=Montserrat:wght@400&family=Open+Sans:wght@400&family=Roboto:wght@400&display=swap" rel="stylesheet">
-
+<script src="https://cdn.tiny.cloud/1/hw35wh74adbpr4x0uc9ngxdc8yxqbh0uazjhujo98kaqrou9/tinymce/7/tinymce.min.js" referrerpolicy="origin"></script>
 <script>
   let img, overlayImg = new Image(), isDrawing = false, isResizing = false;
   let startX, startY, rectWidth, rectHeight;
   let blurArea = { x: 0, y: 0, width: 0, height: 0 };
   let textPosition = { x: 0, y: 0 }; // Position of the text
   let fontSize = 30; // Default font size
-  let customText = ''; // Default text
   let fontFamily = 'Arial'; // Default font family
   let fontColor = '#ffffff'; // Default font color
   let mode = 'text'; // Default mode is text positioning
@@ -765,6 +733,21 @@
     image3: 'https://placehold.co/600x600'
   };
 
+  // Initialize TinyMCE
+  tinymce.init({
+    selector: '#customTextEditor',
+    setup: function (editor) {
+      editor.on('input change', function () {
+        renderImageWithBlur();
+      });
+    },
+    toolbar: 'undo redo | bold italic | fontfamily',
+    menubar: false,
+    font_family_formats: 'Arial=arial,helvetica,sans-serif; AkrutiKndPadmini=Akpdmi-n',
+    default_font_stack: ['Arial'],
+    height: 200,
+  });
+
   // Handle checkbox selection for overlay images
   document.querySelectorAll('input[name="overlayImage"]').forEach((checkbox) => {
     checkbox.addEventListener('change', function() {
@@ -772,6 +755,72 @@
     });
   });
 
+  function drawText(ctx) {
+    // Get the HTML content from TinyMCE or the custom editor
+    const customTextHTML = tinymce.get('customTextEditor').getContent();
+
+    if (customTextHTML) {
+      // Create a temporary DOM element to parse the HTML content
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = customTextHTML;
+
+      // Extract and parse each child node (text, <b>, <i> tags, etc.)
+      const nodes = tempDiv.childNodes;
+
+      let x = textPosition.x;
+      let y = textPosition.y;
+
+      // Loop through all child nodes
+      nodes.forEach(node => {
+        if (node.nodeName === 'P') {
+          // Handle <p> elements for block-level content
+          handleParagraph(ctx, node, x, y);
+          y += 40; // Move to the next line after each paragraph
+        } else {
+          // Inline elements like <b>, <i>, <strong>, etc.
+          handleInlineText(ctx, node, x, y);
+        }
+      });
+      console.log(customTextHTML)
+    }
+  }
+
+  // Function to handle paragraph <p> nodes
+  function handleParagraph(ctx, node, x, y) {
+    node.childNodes.forEach(childNode => {
+      handleInlineText(ctx, childNode, x, y);
+      x += ctx.measureText(childNode.textContent).width + 10; // Adjust x position for inline elements
+    });
+  }
+
+  // Function to handle inline elements (<b>, <i>, <strong>, etc.)
+  function handleInlineText(ctx, node, x, y) {
+    let fontStyle = '';
+
+    // Determine the font style based on the element type
+    if (node.nodeName === 'B' || node.nodeName === 'STRONG') {
+      fontStyle = 'bold ';
+    } else if (node.nodeName === 'I' || node.nodeName === 'EM') {
+      fontStyle = 'italic ';
+    }
+
+    // Check if the node has a specific font family set via inline style
+    if (node.style && node.style.fontFamily) {
+      fontFamily = node.style.fontFamily;
+    }
+
+    // Set font and style for canvas rendering
+    ctx.font = `${fontStyle}${fontSize}px ${fontFamily}`;
+    ctx.fillStyle = fontColor;
+    ctx.textAlign = 'left'; // Align left for better flow control
+
+    // Draw the text based on node type (text or element)
+    if (node.nodeType === Node.TEXT_NODE) {
+      ctx.fillText(node.textContent, x, y);
+    } else if (node.nodeType === Node.ELEMENT_NODE) {
+      ctx.fillText(node.innerText, x, y);
+    }
+  }
 
   document.getElementById('uploadImage').addEventListener('change', function(event) {
     const file = event.target.files[0];
@@ -793,30 +842,14 @@
     renderImageWithBlur(); // Re-render the image to apply new font size
   });
 
-  document.getElementById('customText').addEventListener('input', function() {
-    customText = this.value;
-    renderImageWithBlur(); // Re-render the image to apply new text
-  });
-
-  document.getElementById('fontFamilySelect').addEventListener('change', function() {
-    fontFamily = this.value;
-    renderImageWithBlur(); // Re-render the image to apply new font family
-  });
+  // document.getElementById('customText').addEventListener('input', function() {
+  //   customText = this.value;
+  //   renderImageWithBlur(); // Re-render the image to apply new text
+  // });
 
   document.getElementById('fontColor').addEventListener('input', function() {
     fontColor = this.value;
     renderImageWithBlur(); // Re-render the image to apply new font color
-  });
-
-  // Handle overlay image selection
-  document.querySelectorAll('input[name="overlayImage"]').forEach((radio) => {
-    radio.addEventListener('change', function() {
-      overlayImageSelection = this.value;
-      overlayImg.src = overlayImages[overlayImageSelection]; // Load the selected image
-      overlayImg.onload = function() {
-        renderImageWithBlur(); // Re-render the image with the new overlay image
-      };
-    });
   });
 
   // Mode switcher for toggling between text positioning and blur area mode
@@ -837,12 +870,6 @@
     });
   });
 
-  // Handle transparency adjustment
-  // document.getElementById('imageTransparency').addEventListener('input', function() {
-  //   imageTransparency = parseInt(this.value) / 100; // Convert range from 0-100 to 0-1
-  //   renderImageWithBlur(); // Re-render the image with the new transparency
-  // });
-
   let blurStrength = 10; // Default blur strength (10px)
 
   // Capture the value from the blur range input and update the blur strength dynamically
@@ -856,6 +883,7 @@
     const canvas = document.getElementById('imageCanvas');
     const ctx = canvas.getContext('2d');
 
+    // Scale the image if larger than 800px
     let scaleFactor = 1;
     if (img.width > 800 || img.height > 800) {
       scaleFactor = Math.min(800 / img.width, 800 / img.height);
@@ -870,52 +898,39 @@
     // Clear the canvas
     ctx.clearRect(0, 0, canvasWidth, canvasHeight);
 
-    // Draw uploaded image first
+    // 1. Draw the uploaded image to the canvas (scaled)
+    // ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
+
+    // 2. Apply blur to the entire image by drawing the image again with the blur filter
+    ctx.filter = `blur(${blurStrength}px)`;  // Apply blur based on user input
     ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
-
-    // Then draw the overlay image
-    // if (overlayImg.src) {
-    //   ctx.globalAlpha = imageTransparency; // Apply transparency to the overlay
-    //   const overlayWidth = overlayImg.width;
-    //   const overlayHeight = overlayImg.height;
-    //   const overlayX = (canvas.width - overlayWidth) / 2; // Center the overlay image horizontally
-    //   const overlayY = (canvas.height - overlayHeight) / 2; // Center the overlay image vertically
-    //   ctx.drawImage(overlayImg, overlayX, overlayY, overlayWidth, overlayHeight);
-    //   ctx.globalAlpha = 1; // Reset transparency after drawing the overlay
-    // }
-
-    // Apply blur to the entire image
-    ctx.filter = `blur(${blurStrength}px)`;
-    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
     ctx.filter = 'none'; // Reset the filter
 
-    // Restore the unblurred region
+    // 3. Restore the unblurred region, if specified
     if (blurArea.width > 0 && blurArea.height > 0) {
+      // Redraw the unblurred part of the image
       ctx.drawImage(
         img,
-        blurArea.x / scaleFactor,
-        blurArea.y / scaleFactor,
-        blurArea.width / scaleFactor,
-        blurArea.height / scaleFactor,
-        blurArea.x,
-        blurArea.y,
-        blurArea.width,
-        blurArea.height
+        blurArea.x / scaleFactor, // Source X
+        blurArea.y / scaleFactor, // Source Y
+        blurArea.width / scaleFactor, // Source width
+        blurArea.height / scaleFactor, // Source height
+        blurArea.x, // Destination X
+        blurArea.y, // Destination Y
+        blurArea.width, // Destination width
+        blurArea.height // Destination height
       );
     }
 
-    // Draw the custom text at the selected position
-    if (customText) {
-      ctx.font = `${fontSize}px ${fontFamily}`;
-      ctx.fillStyle = fontColor;
-      ctx.textAlign = 'center';
-      ctx.fillText(customText, textPosition.x, textPosition.y);
-    }
+    // 4. Draw the custom text at the selected position
+    drawText(ctx);
 
-    // Display the canvas and download button
+    // 5. Display the canvas and download button
     canvas.style.display = 'block';
     document.getElementById('downloadButton').style.display = 'block';
   }
+
+
 
   // Handle canvas click events depending on the current mode
   function handleCanvasClick(e) {
