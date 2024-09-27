@@ -22,669 +22,12 @@
 </head>
 
 <body>
-<!-- Version 1-->
-<!--<form id="imageForm">-->
-<!--  <input type="file" id="uploadImage" accept="image/*">-->
-<!--  <br><br>-->
-
-<!--  &lt;!&ndash; Radio buttons for logo position &ndash;&gt;-->
-<!--  <label>-->
-<!--    <input type="radio" name="logoPosition" value="top-left" checked> Logo Top Left-->
-<!--  </label>-->
-<!--  <label>-->
-<!--    <input type="radio" name="logoPosition" value="top-right"> Logo Top Right-->
-<!--  </label>-->
-<!--  <label>-->
-<!--    <input type="radio" name="logoPosition" value="bottom-left"> Logo Bottom Left-->
-<!--  </label>-->
-<!--  <label>-->
-<!--    <input type="radio" name="logoPosition" value="bottom-right"> Logo Bottom Right-->
-<!--  </label>-->
-<!--  <br><br>-->
-
-<!--  &lt;!&ndash; Text field for custom text &ndash;&gt;-->
-<!--  <input type="text" id="customText" placeholder="Enter your text">-->
-<!--  <br><br>-->
-
-<!--  &lt;!&ndash; Input range for text size &ndash;&gt;-->
-<!--  <label for="textSize">Text Size:</label>-->
-<!--  <input type="range" id="textSize" min="10" max="100" value="20">-->
-<!--  <br><br>-->
-
-<!--  &lt;!&ndash; Radio buttons for text position &ndash;&gt;-->
-<!--  <label>-->
-<!--    <input type="radio" name="textPosition" value="top-left" checked> Text Top Left-->
-<!--  </label>-->
-<!--  <label>-->
-<!--    <input type="radio" name="textPosition" value="top-right"> Text Top Right-->
-<!--  </label>-->
-<!--  <label>-->
-<!--    <input type="radio" name="textPosition" value="bottom-left"> Text Bottom Left-->
-<!--  </label>-->
-<!--  <label>-->
-<!--    <input type="radio" name="textPosition" value="bottom-right"> Text Bottom Right-->
-<!--  </label>-->
-<!--  <br><br>-->
-
-<!--  <canvas id="imageCanvas" style="display:none;"></canvas>-->
-<!--  <br>-->
-<!--  <button type="button" id="downloadButton" style="display:none;">Download Processed Image</button>-->
-<!--</form>-->
-
-
-
-<!-- Add your site or application content here -->
-<!--  <script>-->
-<!--    let img, logo, textSize = 20; // Default text size-->
-
-<!--    document.getElementById('uploadImage').addEventListener('change', function(event) {-->
-<!--      const file = event.target.files[0];-->
-<!--      if (!file) return;-->
-
-<!--      const reader = new FileReader();-->
-<!--      reader.onload = function(e) {-->
-<!--        img = new Image();-->
-<!--        img.onload = function() {-->
-<!--          logo = new Image();-->
-<!--          logo.crossOrigin = 'Anonymous'; // Avoid CORS issues-->
-<!--          logo.src = 'https://placehold.co/200x200'; // Your external logo image-->
-<!--          logo.onload = function() {-->
-<!--            renderImageWithLogoAndText(); // Initial rendering-->
-<!--          };-->
-<!--        };-->
-<!--        img.src = e.target.result;-->
-<!--      };-->
-<!--      reader.readAsDataURL(file);-->
-<!--    });-->
-
-<!--    // Function to render the image with the logo and text-->
-<!--    function renderImageWithLogoAndText() {-->
-<!--      const canvas = document.getElementById('imageCanvas');-->
-<!--      const ctx = canvas.getContext('2d');-->
-
-<!--      // Calculate canvas dimensions-->
-<!--      let scaleFactor = 1;-->
-<!--      if (img.width > 800 || img.height > 800) {-->
-<!--        scaleFactor = Math.min(800 / img.width, 800 / img.height);-->
-<!--      }-->
-
-<!--      const canvasWidth = img.width * scaleFactor;-->
-<!--      const canvasHeight = img.height * scaleFactor;-->
-
-<!--      canvas.width = canvasWidth;-->
-<!--      canvas.height = canvasHeight;-->
-
-<!--      // Draw the main image-->
-<!--      ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);-->
-
-<!--      // Get the selected logo position-->
-<!--      const logoPosition = document.querySelector('input[name="logoPosition"]:checked').value;-->
-<!--      let logoX, logoY;-->
-
-<!--      switch (logoPosition) {-->
-<!--        case 'top-left':-->
-<!--          logoX = 10;-->
-<!--          logoY = 10;-->
-<!--          break;-->
-<!--        case 'top-right':-->
-<!--          logoX = canvasWidth - logo.width - 10;-->
-<!--          logoY = 10;-->
-<!--          break;-->
-<!--        case 'bottom-left':-->
-<!--          logoX = 10;-->
-<!--          logoY = canvasHeight - logo.height - 10;-->
-<!--          break;-->
-<!--        case 'bottom-right':-->
-<!--          logoX = canvasWidth - logo.width - 10;-->
-<!--          logoY = canvasHeight - logo.height - 10;-->
-<!--          break;-->
-<!--      }-->
-
-<!--      // Draw the logo-->
-<!--      ctx.drawImage(logo, logoX, logoY);-->
-
-<!--      // Get the custom text and the selected text position-->
-<!--      const customText = document.getElementById('customText').value;-->
-<!--      const textPosition = document.querySelector('input[name="textPosition"]:checked').value;-->
-<!--      let textX, textY;-->
-
-<!--      // Set text style based on the current text size-->
-<!--      ctx.font = `${textSize}px Arial`;-->
-<!--      ctx.fillStyle = 'white';-->
-<!--      ctx.textAlign = 'left';-->
-
-<!--      switch (textPosition) {-->
-<!--        case 'top-left':-->
-<!--          textX = 10;-->
-<!--          textY = 30;-->
-<!--          break;-->
-<!--        case 'top-right':-->
-<!--          ctx.textAlign = 'right';-->
-<!--          textX = canvasWidth - 10;-->
-<!--          textY = 30;-->
-<!--          break;-->
-<!--        case 'bottom-left':-->
-<!--          textX = 10;-->
-<!--          textY = canvasHeight - 10;-->
-<!--          break;-->
-<!--        case 'bottom-right':-->
-<!--          ctx.textAlign = 'right';-->
-<!--          textX = canvasWidth - 10;-->
-<!--          textY = canvasHeight - 10;-->
-<!--          break;-->
-<!--      }-->
-
-<!--      // Draw the custom text-->
-<!--      ctx.fillText(customText, textX, textY);-->
-
-<!--      // Display the canvas and download button-->
-<!--      canvas.style.display = 'block';-->
-<!--      document.getElementById('downloadButton').style.display = 'block';-->
-<!--    }-->
-
-<!--    // Update the image when any input changes-->
-<!--    document.querySelectorAll('input[name="logoPosition"], input[name="textPosition"], #customText, #textSize').forEach(function(input) {-->
-<!--      input.addEventListener('change', function() {-->
-<!--        if (img && logo) {-->
-<!--          renderImageWithLogoAndText();-->
-<!--        }-->
-<!--      });-->
-<!--    });-->
-
-<!--    // Update text size when the range input changes-->
-<!--    document.getElementById('textSize').addEventListener('input', function() {-->
-<!--      textSize = this.value;-->
-<!--      if (img && logo) {-->
-<!--        renderImageWithLogoAndText();-->
-<!--      }-->
-<!--    });-->
-
-<!--    document.getElementById('downloadButton').addEventListener('click', function() {-->
-<!--      const canvas = document.getElementById('imageCanvas');-->
-<!--      const link = document.createElement('a');-->
-<!--      link.href = canvas.toDataURL('image/png');-->
-<!--      link.download = 'processed-image.png';-->
-<!--      link.click();-->
-<!--    });-->
-
-<!--  </script>-->
-
-<!-- Version 2-->
-<!--<form id="imageForm">-->
-<!--  <input type="file" id="uploadImage" accept="image/*">-->
-<!--  <br><br>-->
-
-<!--  <canvas id="imageCanvas" style="display:none; border: 1px solid black;"></canvas>-->
-<!--  <br>-->
-<!--  <button type="button" id="downloadButton" style="display:none;">Download Processed Image</button>-->
-<!--</form>-->
-
-<!--<script>-->
-<!--  let img, isDrawing = false, isResizing = false;-->
-<!--  let startX, startY, rectWidth, rectHeight;-->
-<!--  let blurArea = { x: 0, y: 0, width: 0, height: 0 };-->
-
-<!--  document.getElementById('uploadImage').addEventListener('change', function(event) {-->
-<!--    const file = event.target.files[0];-->
-<!--    if (!file) return;-->
-
-<!--    const reader = new FileReader();-->
-<!--    reader.onload = function(e) {-->
-<!--      img = new Image();-->
-<!--      img.onload = function() {-->
-<!--        renderImageWithBlur(); // Initial rendering with blur-->
-<!--      };-->
-<!--      img.src = e.target.result;-->
-<!--    };-->
-<!--    reader.readAsDataURL(file);-->
-<!--  });-->
-
-<!--  // Function to render the image with a blur and a clear area-->
-<!--  function renderImageWithBlur() {-->
-<!--    const canvas = document.getElementById('imageCanvas');-->
-<!--    const ctx = canvas.getContext('2d');-->
-
-<!--    // Calculate canvas dimensions-->
-<!--    let scaleFactor = 1;-->
-<!--    if (img.width > 800 || img.height > 800) {-->
-<!--      scaleFactor = Math.min(800 / img.width, 800 / img.height);-->
-<!--    }-->
-
-<!--    const canvasWidth = img.width * scaleFactor;-->
-<!--    const canvasHeight = img.height * scaleFactor;-->
-
-<!--    canvas.width = canvasWidth;-->
-<!--    canvas.height = canvasHeight;-->
-
-<!--    // Clear the canvas-->
-<!--    ctx.clearRect(0, 0, canvasWidth, canvasHeight);-->
-
-<!--    // Blur the entire image first-->
-<!--    ctx.filter = 'blur(10px)'; // Apply a 10px blur to the entire image-->
-<!--    ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);-->
-<!--    ctx.filter = 'none'; // Reset the filter-->
-
-<!--    // Restore the unblurred region-->
-<!--    if (blurArea.width > 0 && blurArea.height > 0) {-->
-<!--      // Draw the unblurred image area on top of the blurred image-->
-<!--      ctx.drawImage(-->
-<!--        img,-->
-<!--        blurArea.x / scaleFactor,-->
-<!--        blurArea.y / scaleFactor,-->
-<!--        blurArea.width / scaleFactor,-->
-<!--        blurArea.height / scaleFactor,-->
-<!--        blurArea.x,-->
-<!--        blurArea.y,-->
-<!--        blurArea.width,-->
-<!--        blurArea.height-->
-<!--      );-->
-<!--    }-->
-
-<!--    // Display the canvas and download button-->
-<!--    canvas.style.display = 'block';-->
-<!--    document.getElementById('downloadButton').style.display = 'block';-->
-<!--  }-->
-
-<!--  // Function to handle drawing the rectangle on the canvas-->
-<!--  function handleMouseDown(e) {-->
-<!--    const canvas = document.getElementById('imageCanvas');-->
-<!--    const rect = canvas.getBoundingClientRect();-->
-<!--    startX = e.clientX - rect.left;-->
-<!--    startY = e.clientY - rect.top;-->
-
-<!--    if (isInsideBlurArea(startX, startY)) {-->
-<!--      isResizing = true; // If inside the blur area, resize it-->
-<!--    } else {-->
-<!--      isDrawing = true; // Otherwise, draw a new area-->
-<!--    }-->
-<!--  }-->
-
-<!--  function handleMouseMove(e) {-->
-<!--    if (!isDrawing && !isResizing) return;-->
-
-<!--    const canvas = document.getElementById('imageCanvas');-->
-<!--    const ctx = canvas.getContext('2d');-->
-<!--    const rect = canvas.getBoundingClientRect();-->
-
-<!--    const currentX = e.clientX - rect.left;-->
-<!--    const currentY = e.clientY - rect.top;-->
-
-<!--    if (isDrawing) {-->
-<!--      rectWidth = currentX - startX;-->
-<!--      rectHeight = currentY - startY;-->
-
-<!--      // Redraw the image and blur-->
-<!--      renderImageWithBlur();-->
-
-<!--      // Draw the rectangle for the clear area-->
-<!--      ctx.strokeStyle = 'red';-->
-<!--      ctx.lineWidth = 2;-->
-<!--      ctx.strokeRect(startX, startY, rectWidth, rectHeight);-->
-<!--    } else if (isResizing) {-->
-<!--      // Resize the blur-free area-->
-<!--      rectWidth = currentX - blurArea.x;-->
-<!--      rectHeight = currentY - blurArea.y;-->
-
-<!--      renderImageWithBlur();-->
-<!--      ctx.strokeStyle = 'red';-->
-<!--      ctx.lineWidth = 2;-->
-<!--      ctx.strokeRect(blurArea.x, blurArea.y, rectWidth, rectHeight);-->
-<!--    }-->
-<!--  }-->
-
-<!--  function handleMouseUp(e) {-->
-<!--    if (isDrawing) {-->
-<!--      isDrawing = false;-->
-
-<!--      blurArea.x = startX;-->
-<!--      blurArea.y = startY;-->
-<!--      blurArea.width = rectWidth;-->
-<!--      blurArea.height = rectHeight;-->
-
-<!--      renderImageWithBlur();-->
-<!--    } else if (isResizing) {-->
-<!--      isResizing = false;-->
-
-<!--      blurArea.width = rectWidth;-->
-<!--      blurArea.height = rectHeight;-->
-
-<!--      renderImageWithBlur();-->
-<!--    }-->
-<!--  }-->
-
-<!--  // Helper function to check if the mouse is inside the blur-free area-->
-<!--  function isInsideBlurArea(x, y) {-->
-<!--    return x > blurArea.x && x < blurArea.x + blurArea.width &&-->
-<!--      y > blurArea.y && y < blurArea.y + blurArea.height;-->
-<!--  }-->
-
-<!--  // Attach mouse event listeners to the canvas-->
-<!--  const canvas = document.getElementById('imageCanvas');-->
-<!--  canvas.addEventListener('mousedown', handleMouseDown);-->
-<!--  canvas.addEventListener('mousemove', handleMouseMove);-->
-<!--  canvas.addEventListener('mouseup', handleMouseUp);-->
-
-<!--  // Download button functionality-->
-<!--  document.getElementById('downloadButton').addEventListener('click', function() {-->
-<!--    const canvas = document.getElementById('imageCanvas');-->
-<!--    const link = document.createElement('a');-->
-<!--    link.href = canvas.toDataURL('image/png');-->
-<!--    link.download = 'blurred-image.png';-->
-<!--    link.click();-->
-<!--  });-->
-<!--</script>-->
-
-<!-- Version 3 -->
-<!--
-<form id="imageForm">
-  <input type="file" id="uploadImage" accept="image/*">
-  <br><br>
-
-  &lt;!&ndash; Mode selector for choosing between Text and Blur Area &ndash;&gt;
-  <label>
-    <input type="radio" name="mode" value="text" checked> Text Mode
-  </label>
-  <label>
-    <input type="radio" name="mode" value="blur"> Blur Area Mode
-  </label>
-  <br><br>
-
-  &lt;!&ndash; Input for font size &ndash;&gt;
-  <label for="fontSizeRange">Font Size:</label>
-  <input type="range" id="fontSizeRange" min="10" max="100" value="30">
-  <br><br>
-
-  &lt;!&ndash; Input for custom text &ndash;&gt;
-  <input type="text" id="customText" placeholder="Enter your text">
-  <br><br>
-
-  &lt;!&ndash; Select font family &ndash;&gt;
-  <label for="fontFamilySelect">Font Family:</label>
-  <select id="fontFamilySelect">
-    <option value="Arial" selected>Arial</option>
-    <option value="Roboto">Roboto</option>
-    <option value="Open Sans">Open Sans</option>
-    <option value="Lato">Lato</option>
-    <option value="Montserrat">Montserrat</option>
-  </select>
-  <br><br>
-
-  &lt;!&ndash; Font color picker &ndash;&gt;
-  <label for="fontColor">Font Color:</label>
-  <input type="color" id="fontColor" value="#ffffff">
-  <br><br>
-
-  &lt;!&ndash; Image overlay radio buttons &ndash;&gt;
-  <label>
-    <input type="radio" name="overlayImage" value="image1" checked> Image 1
-  </label>
-  <label>
-    <input type="radio" name="overlayImage" value="image2"> Image 2
-  </label>
-  <label>
-    <input type="radio" name="overlayImage" value="image3"> Image 3
-  </label>
-  <br><br>
-
-  <canvas id="imageCanvas" style="display:none; border: 1px solid black;"></canvas>
-  <br>
-  <button type="button" id="downloadButton" style="display:none;">Download Processed Image</button>
-</form>
-
-&lt;!&ndash; Google Fonts API &ndash;&gt;
-<link href="https://fonts.googleapis.com/css2?family=Lato:wght@400&family=Montserrat:wght@400&family=Open+Sans:wght@400&family=Roboto:wght@400&display=swap" rel="stylesheet">
-
-<script>
-  let img, overlayImg = new Image(), isDrawing = false, isResizing = false;
-  let startX, startY, rectWidth, rectHeight;
-  let blurArea = { x: 0, y: 0, width: 0, height: 0 };
-  let textPosition = { x: 0, y: 0 }; // Position of the text
-  let fontSize = 30; // Default font size
-  let customText = ''; // Default text
-  let fontFamily = 'Arial'; // Default font family
-  let fontColor = '#ffffff'; // Default font color
-  let mode = 'text'; // Default mode is text positioning
-  let overlayImageSelection = 'image1'; // Default overlay image
-
-  // Overlay images
-  const overlayImages = {
-    image1: 'https://via.placeholder.com/150?text=Image1', // Replace with actual image URL
-    image2: 'https://via.placeholder.com/150?text=Image2', // Replace with actual image URL
-    image3: 'https://via.placeholder.com/150?text=Image3'  // Replace with actual image URL
-  };
-
-  document.getElementById('uploadImage').addEventListener('change', function(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      img = new Image();
-      img.onload = function() {
-        renderImageWithBlur(); // Initial rendering with blur
-      };
-      img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
-  });
-
-  document.getElementById('fontSizeRange').addEventListener('input', function() {
-    fontSize = parseInt(this.value);
-    renderImageWithBlur(); // Re-render the image to apply new font size
-  });
-
-  document.getElementById('customText').addEventListener('input', function() {
-    customText = this.value;
-    renderImageWithBlur(); // Re-render the image to apply new text
-  });
-
-  document.getElementById('fontFamilySelect').addEventListener('change', function() {
-    fontFamily = this.value;
-    renderImageWithBlur(); // Re-render the image to apply new font family
-  });
-
-  document.getElementById('fontColor').addEventListener('input', function() {
-    fontColor = this.value;
-    renderImageWithBlur(); // Re-render the image to apply new font color
-  });
-
-  // Handle overlay image selection
-  document.querySelectorAll('input[name="overlayImage"]').forEach((radio) => {
-    radio.addEventListener('change', function() {
-      overlayImageSelection = this.value;
-      overlayImg.src = overlayImages[overlayImageSelection]; // Load the selected image
-      overlayImg.onload = function() {
-        renderImageWithBlur(); // Re-render the image with the new overlay image
-      };
-    });
-  });
-
-  // Mode switcher for toggling between text positioning and blur area mode
-  document.querySelectorAll('input[name="mode"]').forEach((radio) => {
-    radio.addEventListener('change', function() {
-      mode = this.value; // Update the mode based on user selection
-    });
-  });
-
-  // Function to render the image with a blur, clear area, overlay image, and text
-  function renderImageWithBlur() {
-    const canvas = document.getElementById('imageCanvas');
-    const ctx = canvas.getContext('2d');
-
-    let scaleFactor = 1;
-    if (img.width > 800 || img.height > 800) {
-      scaleFactor = Math.min(800 / img.width, 800 / img.height);
-    }
-
-    const canvasWidth = img.width * scaleFactor;
-    const canvasHeight = img.height * scaleFactor;
-
-    canvas.width = canvasWidth;
-    canvas.height = canvasHeight;
-
-    // Clear the canvas
-    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-
-    // Draw the main image
-    ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
-
-    // Draw the overlay image between the original image and the blur mask
-    if (overlayImg.src) {
-      const overlayWidth = 150; // Example fixed size, can be adjusted
-      const overlayHeight = 150;
-      const overlayX = (canvasWidth - overlayWidth) / 2; // Centered horizontally
-      const overlayY = (canvasHeight - overlayHeight) / 2; // Centered vertically
-      ctx.drawImage(overlayImg, overlayX, overlayY, overlayWidth, overlayHeight);
-    }
-
-    // Apply blur to the entire image after the overlay
-    ctx.filter = 'blur(10px)';
-    ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
-    ctx.filter = 'none'; // Reset the filter
-
-    // Restore the unblurred region
-    if (blurArea.width > 0 && blurArea.height > 0) {
-      ctx.drawImage(
-        img,
-        blurArea.x / scaleFactor,
-        blurArea.y / scaleFactor,
-        blurArea.width / scaleFactor,
-        blurArea.height / scaleFactor,
-        blurArea.x,
-        blurArea.y,
-        blurArea.width,
-        blurArea.height
-      );
-    }
-
-    // Draw the custom text at the selected position
-    if (customText) {
-      ctx.font = `${fontSize}px ${fontFamily}`;
-      ctx.fillStyle = fontColor;
-      ctx.textAlign = 'center';
-      ctx.fillText(customText, textPosition.x, textPosition.y);
-    }
-
-    // Display the canvas and download button
-    canvas.style.display = 'block';
-    document.getElementById('downloadButton').style.display = 'block';
-  }
-
-  // Handle canvas click events depending on the current mode
-  function handleCanvasClick(e) {
-    const canvas = document.getElementById('imageCanvas');
-    const rect = canvas.getBoundingClientRect();
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
-
-    if (mode === 'text') {
-      // Set text position when in text mode
-      textPosition.x = mouseX;
-      textPosition.y = mouseY;
-      renderImageWithBlur(); // Re-render the image with the updated text position
-    }
-  }
-
-  // Handle mouse down for drawing blur area or moving text
-  function handleMouseDown(e) {
-    if (mode !== 'blur') return; // Only allow drawing in blur mode
-
-    const canvas = document.getElementById('imageCanvas');
-    const rect = canvas.getBoundingClientRect();
-    startX = e.clientX - rect.left;
-    startY = e.clientY - rect.top;
-
-    if (isInsideBlurArea(startX, startY)) {
-      isResizing = true; // If inside the blur area, resize it
-    } else {
-      isDrawing = true; // Otherwise, draw a new area
-    }
-  }
-
-  function handleMouseMove(e) {
-    if (!isDrawing && !isResizing) return;
-
-    const canvas = document.getElementById('imageCanvas');
-    const ctx = canvas.getContext('2d');
-    const rect = canvas.getBoundingClientRect();
-
-    const currentX = e.clientX - rect.left;
-    const currentY = e.clientY - rect.top;
-
-    if (isDrawing) {
-      rectWidth = currentX - startX;
-      rectHeight = currentY - startY;
-
-      // Redraw the image and blur
-      renderImageWithBlur();
-
-      // Draw the rectangle for the clear area
-      ctx.strokeStyle = 'red';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(startX, startY, rectWidth, rectHeight);
-    } else if (isResizing) {
-      rectWidth = currentX - blurArea.x;
-      rectHeight = currentY - blurArea.y;
-
-      renderImageWithBlur();
-      ctx.strokeStyle = 'red';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(blurArea.x, blurArea.y, rectWidth, rectHeight);
-    }
-  }
-
-  function handleMouseUp(e) {
-    if (isDrawing) {
-      isDrawing = false;
-
-      blurArea.x = startX;
-      blurArea.y = startY;
-      blurArea.width = rectWidth;
-      blurArea.height = rectHeight;
-
-      renderImageWithBlur();
-    } else if (isResizing) {
-      isResizing = false;
-
-      blurArea.width = rectWidth;
-      blurArea.height = rectHeight;
-
-      renderImageWithBlur();
-    }
-  }
-
-  function isInsideBlurArea(x, y) {
-    return x > blurArea.x && x < blurArea.x + blurArea.width &&
-      y > blurArea.y && y < blurArea.y + blurArea.height;
-  }
-
-  // Attach event listeners to the canvas for text positioning and blur area drawing
-  const canvas = document.getElementById('imageCanvas');
-  canvas.addEventListener('mousedown', handleMouseDown);
-  canvas.addEventListener('mousemove', handleMouseMove);
-  canvas.addEventListener('mouseup', handleMouseUp);
-  canvas.addEventListener('click', handleCanvasClick);
-
-  // Download button functionality
-  document.getElementById('downloadButton').addEventListener('click', function() {
-    const canvas = document.getElementById('imageCanvas');
-    const link = document.createElement('a');
-    link.href = canvas.toDataURL('image/png');
-    link.download = 'processed-image.png';
-    link.click();
-  });
-
-</script>
--->
-
 <!-- Version 4 -->
 <form id="imageForm">
   <input type="file" id="uploadImage" accept="image/*">
   <br><br>
 
-  <label for="blurStrength">Blur Strength:</label>
-  <input type="range" id="blurStrength" min="0" max="100" value="10">
-  <br><br>
+
 
   <!-- Mode selector for choosing between Text and Blur Area -->
   <label>
@@ -695,19 +38,70 @@
   </label>
   <br><br>
 
-  <!-- Input for font size -->
-  <label for="fontSizeRange">Font Size:</label>
-  <input type="range" id="fontSizeRange" min="10" max="100" value="30">
-  <br><br>
+  <div id="text_mode" class="mode-elements">
+    <!-- Input for font size -->
+    <label for="fontSizeRange">Font Size:</label>
+    <input type="range" id="fontSizeRange" min="10" max="100" value="30">
+    &nbsp;
+    <!-- Font color picker -->
+    <label for="fontColor">Font Color:</label>
+    <input type="color" id="fontColor" value="#ffffff">
+    <br><br>
 
-  <!-- Input for custom text -->
-  <textarea id="customTextEditor"></textarea>
-  <br><br>
+    <!-- Input for custom text -->
+    <textarea id="customTextEditor"></textarea>
+    <br><br>
 
-  <!-- Font color picker -->
-  <label for="fontColor">Font Color:</label>
-  <input type="color" id="fontColor" value="#ffffff">
-  <br><br>
+
+  </div>
+
+  <div id="image_mode" class="mode-elements" style="display: none">
+    <label for="blurStrength">Blur Strength:</label>
+    <input type="range" id="blurStrength" min="0" max="30" value="10">
+    <br><br>
+
+    <label>Select overlay images:</label>
+    <br>
+    <div style="display:flex; align-items: center; gap: 10px">
+      <label>
+        <input type="checkbox" name="overlayImage" value="image1">
+        <img src="./img/GRAIN-1.jpg" width="20" height="20" alt="">
+        <br>
+        <input type="range" id="image1Opacity" min="0" max="100" value="20"> Opacity
+      </label>
+      <label>
+        <input type="checkbox" name="overlayImage" value="image2">
+        <img src="./img/GRAIN-2.jpg" width="20" height="20" alt="">
+        <br>
+        <input type="range" id="image2Opacity" min="0" max="100" value="20"> Opacity
+      </label>
+      <label>
+        <input type="checkbox" name="overlayImage" value="image3">
+        <img src="./img/GRAIN-3.jpg" width="20" height="20" alt="">
+        <br>
+        <input type="range" id="image3Opacity" min="0" max="100" value="20"> Opacity
+      </label>
+      <label>
+        <input type="checkbox" name="overlayImage" value="image4">
+        <img src="./img/GRADIENT.jpg" width="20" height="20" alt="">
+        <br>
+        <input type="range" id="image4Opacity" min="0" max="100" value="20"> Opacity
+      </label>
+      <label>
+        <input type="checkbox" name="overlayImage" value="image5">
+        <img src="./img/GRADIENT-1.jpg" width="20" height="20" alt="">
+        <br>
+        <input type="range" id="image5Opacity" min="0" max="100" value="20"> Opacity
+      </label>
+      <label>
+        <input type="checkbox" name="overlayImage" value="image6">
+        <img src="./img/GRADIENT-4.jpg" width="20" height="20" alt="">
+        <br>
+        <input type="range" id="image6Opacity" min="0" max="100" value="20"> Opacity
+      </label>
+    </div>
+    <br><br>
+  </div>
 
   <canvas id="imageCanvas" style="display:none;"></canvas>
   <br>
@@ -726,12 +120,37 @@
   let mode = 'text'; // Default mode is text positioning
   let overlayImageSelection = 'image1'; // Default overlay image
 
-  // Overlay image URLs
-  const overlayImages = {
-    image1: 'https://placehold.co/600x400',
-    image2: 'https://placehold.co/500x400',
-    image3: 'https://placehold.co/600x600'
+  let overlayImages = {};  // Store overlay images here
+  let overlayImageOpacity = { image1: 0.2, image2: 0.2, image3: 0.2, image4: 0.2, image5: 0.2, image6: 0.2 }; // Default opacity for each image
+  let staticOverlayImages = {
+    image1: './img/GRAIN-1.jpg',  // Image 1 link
+    image2: './img/GRAIN-2.jpg',  // Image 2 link
+    image3: './img/GRAIN-3.jpg',  // Image 3 link
+    image4: './img/GRADIENT.jpg',  // Image 4 link
+    image5: './img/GRADIENT-1.jpg',  // Image 5 link
+    image6: './img/GRADIENT-4.jpg',  // Image 6 link
   };
+
+  // Handle the checkbox selections for overlay images
+  document.querySelectorAll('input[name="overlayImage"]').forEach(checkbox => {
+    checkbox.addEventListener('change', function() {
+      const selectedImage = checkbox.value;
+
+      if (checkbox.checked) {
+        // Load the overlay image and store it in the overlayImages object
+        const overlayImg = new Image();
+        overlayImg.src = staticOverlayImages[selectedImage];
+        overlayImg.onload = function() {
+          overlayImages[selectedImage] = overlayImg;
+          renderImageWithBlur();  // Re-render with the new overlay
+        };
+      } else {
+        // Remove the image from the overlayImages object
+        delete overlayImages[selectedImage];
+        renderImageWithBlur();  // Re-render without the overlay
+      }
+    });
+  });
 
   // Initialize TinyMCE
   tinymce.init({
@@ -775,7 +194,7 @@
         if (node.nodeName === 'P') {
           // Handle <p> elements for block-level content
           handleParagraph(ctx, node, x, y);
-          y += 40; // Move to the next line after each paragraph
+          y += fontSize* 1.2; // Move to the next line after each paragraph
         } else {
           // Inline elements like <b>, <i>, <strong>, etc.
           handleInlineText(ctx, node, x, y);
@@ -789,7 +208,7 @@
   function handleParagraph(ctx, node, x, y) {
     node.childNodes.forEach(childNode => {
       handleInlineText(ctx, childNode, x, y);
-      x += ctx.measureText(childNode.textContent).width + 10; // Adjust x position for inline elements
+      x += ctx.measureText(childNode.textContent).width; // Adjust x position for inline elements
     });
   }
 
@@ -822,6 +241,10 @@
     }
   }
 
+  let staticImg = new Image();
+  staticImg.src = 'https://placehold.co/600x600';
+
+  // Load the uploaded image
   document.getElementById('uploadImage').addEventListener('change', function(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -830,7 +253,7 @@
     reader.onload = function(e) {
       img = new Image();
       img.onload = function() {
-        renderImageWithBlur(); // Initial rendering with blur
+        renderImageWithBlur(); // Initial rendering with the uploaded image and static image overlay
       };
       img.src = e.target.result;
     };
@@ -842,15 +265,36 @@
     renderImageWithBlur(); // Re-render the image to apply new font size
   });
 
-  // document.getElementById('customText').addEventListener('input', function() {
-  //   customText = this.value;
-  //   renderImageWithBlur(); // Re-render the image to apply new text
-  // });
-
   document.getElementById('fontColor').addEventListener('input', function() {
     fontColor = this.value;
     renderImageWithBlur(); // Re-render the image to apply new font color
   });
+
+  // Get references to mode radio buttons and the elements to show/hide
+  const modeRadios = document.querySelectorAll('input[name="mode"]');
+  const textElements = document.getElementById('text_mode');
+  const blurElements = document.getElementById('image_mode');
+
+  // Function to update the visibility of elements based on the active mode
+  function updateVisibility() {
+    const activeMode = document.querySelector('input[name="mode"]:checked').value;
+
+    if (activeMode === 'text') {
+      textElements.style.display = 'block';
+      blurElements.style.display = 'none';
+    } else if (activeMode === 'blur') {
+      textElements.style.display = 'none';
+      blurElements.style.display = 'block';
+    }
+  }
+
+  // Add event listeners to the mode radio buttons
+  modeRadios.forEach(radio => {
+    radio.addEventListener('change', updateVisibility);
+  });
+
+  // Call the function initially to set the correct visibility when the page loads
+  updateVisibility();
 
   // Mode switcher for toggling between text positioning and blur area mode
   document.querySelectorAll('input[name="mode"]').forEach((radio) => {
@@ -878,6 +322,16 @@
     renderImageWithBlur(); // Re-render the canvas with the new blur strength
   });
 
+  // Handle opacity sliders for each overlay image
+  document.querySelectorAll('input[type="range"]').forEach(slider => {
+    slider.addEventListener('input', function() {
+      const imageName = this.id.replace('Opacity', '');
+      const opacityValue = parseInt(this.value) / 100;  // Convert to opacity range 0-1
+      overlayImageOpacity[imageName] = opacityValue;  // Store the opacity value
+      renderImageWithBlur();  // Re-render with updated opacity
+    });
+  });
+
   // Function to render the image with a blur, clear area, overlay image, and text
   function renderImageWithBlur() {
     const canvas = document.getElementById('imageCanvas');
@@ -903,7 +357,7 @@
 
     // 2. Apply blur to the entire image by drawing the image again with the blur filter
     ctx.filter = `blur(${blurStrength}px)`;  // Apply blur based on user input
-    ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
+    ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);  // Blur with shifted and expanded size
     ctx.filter = 'none'; // Reset the filter
 
     // 3. Restore the unblurred region, if specified
@@ -911,21 +365,31 @@
       // Redraw the unblurred part of the image
       ctx.drawImage(
         img,
-        blurArea.x / scaleFactor, // Source X
-        blurArea.y / scaleFactor, // Source Y
-        blurArea.width / scaleFactor, // Source width
-        blurArea.height / scaleFactor, // Source height
-        blurArea.x, // Destination X
-        blurArea.y, // Destination Y
-        blurArea.width, // Destination width
-        blurArea.height // Destination height
+        blurArea.x / scaleFactor,        // Source X (same as unblurred area)
+        blurArea.y / scaleFactor,        // Source Y (same as unblurred area)
+        blurArea.width / scaleFactor,    // Source width (exact size, no blur offset)
+        blurArea.height / scaleFactor,   // Source height (exact size, no blur offset)
+        blurArea.x,                 // Destination X (shifted -20px to the left)
+        blurArea.y,                 // Destination Y (shifted -20px up)
+        blurArea.width,             // Destination width (increased by 40px)
+        blurArea.height
       );
     }
 
-    // 4. Draw the custom text at the selected position
+    // 4. Draw the selected overlay images with their respective opacities
+    for (let key in overlayImages) {
+      const overlayImg = overlayImages[key];
+      const opacity = overlayImageOpacity[key];  // Get the opacity for the current image
+      ctx.globalAlpha = opacity;  // Apply the opacity
+      ctx.drawImage(overlayImg, 0, 0, canvasWidth, canvasHeight);
+      ctx.globalAlpha = 1;  // Reset the opacity
+    }
+
+
+    // 5. Draw the custom text at the selected position
     drawText(ctx);
 
-    // 5. Display the canvas and download button
+    // 6. Display the canvas and download button
     canvas.style.display = 'block';
     document.getElementById('downloadButton').style.display = 'block';
   }
