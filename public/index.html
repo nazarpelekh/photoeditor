@@ -36,6 +36,9 @@
   <label>
     <input type="radio" name="mode" value="blur"> Blur Area Mode
   </label>
+  <label>
+    <input type="radio" name="mode" value="logo"> Logo Mode
+  </label>
   <br><br>
 
   <div id="text_mode" class="mode-elements">
@@ -57,7 +60,7 @@
 
   <div id="image_mode" class="mode-elements" style="display: none">
     <label for="blurStrength">Blur Strength:</label>
-    <input type="range" id="blurStrength" min="0" max="30" value="10">
+    <input type="range" id="blurStrength" min="0" max="30" value="0">
     <br><br>
 
     <label>Select overlay images:</label>
@@ -103,6 +106,22 @@
     <br><br>
   </div>
 
+  <div id="logoElements" class="mode-elements" style="display:none;">
+    <label for="uploadLogo">Upload Logo (SVG, PNG, JPEG):</label>
+    <input type="file" id="uploadLogo" accept=".svg, .png, .jpg, .jpeg">
+    <br><br>
+
+    <!-- Logo position selection -->
+    <label for="logoPosition">Select Logo Position:</label>
+    <select id="logoPosition">
+      <option value="top-left">Top Left</option>
+      <option value="top-right">Top Right</option>
+      <option value="bottom-left">Bottom Left</option>
+      <option value="bottom-right">Bottom Right</option>
+      <option value="center">Center</option>
+    </select>
+  </div>
+
   <canvas id="imageCanvas" style="display:none;"></canvas>
   <br>
   <button type="button" id="downloadButton" style="display:none;">Download Processed Image</button>
@@ -111,6 +130,7 @@
 <script src="https://cdn.tiny.cloud/1/hw35wh74adbpr4x0uc9ngxdc8yxqbh0uazjhujo98kaqrou9/tinymce/7/tinymce.min.js" referrerpolicy="origin"></script>
 <script>
   let img, overlayImg = new Image(), isDrawing = false, isResizing = false;
+  let logoImg;
   let startX, startY, rectWidth, rectHeight;
   let blurArea = { x: 0, y: 0, width: 0, height: 0 };
   let textPosition = { x: 0, y: 0 }; // Position of the text
@@ -130,6 +150,22 @@
     image5: './img/GRADIENT-1.jpg',  // Image 5 link
     image6: './img/GRADIENT-4.jpg',  // Image 6 link
   };
+
+  // Handle the logo upload
+  document.getElementById('uploadLogo').addEventListener('change', function(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      logoImg = new Image();
+      logoImg.onload = function() {
+        renderImageWithBlur();  // Re-render with the logo image
+      };
+      logoImg.src = e.target.result;  // Load the uploaded logo image
+    };
+    reader.readAsDataURL(file);
+  });
 
   // Handle the checkbox selections for overlay images
   document.querySelectorAll('input[name="overlayImage"]').forEach(checkbox => {
@@ -274,6 +310,7 @@
   const modeRadios = document.querySelectorAll('input[name="mode"]');
   const textElements = document.getElementById('text_mode');
   const blurElements = document.getElementById('image_mode');
+  const logoElements = document.getElementById('logoElements')
 
   // Function to update the visibility of elements based on the active mode
   function updateVisibility() {
@@ -282,9 +319,15 @@
     if (activeMode === 'text') {
       textElements.style.display = 'block';
       blurElements.style.display = 'none';
+      logoElements.style.display = 'none';
     } else if (activeMode === 'blur') {
       textElements.style.display = 'none';
       blurElements.style.display = 'block';
+      logoElements.style.display = 'none';
+    } else if (activeMode === 'logo') {
+      textElements.style.display = 'none';
+      blurElements.style.display = 'none';
+      logoElements.style.display = 'block';
     }
   }
 
@@ -314,7 +357,7 @@
     });
   });
 
-  let blurStrength = 10; // Default blur strength (10px)
+  let blurStrength = 0; // Default blur strength (10px)
 
   // Capture the value from the blur range input and update the blur strength dynamically
   document.getElementById('blurStrength').addEventListener('input', function() {
@@ -385,16 +428,68 @@
       ctx.globalAlpha = 1;  // Reset the opacity
     }
 
+    // 5. Draw the uploaded logo at the selected position
+    if (logoImg) {
+      const logoPosition = document.getElementById('logoPosition').value;
+      let x, y;
 
-    // 5. Draw the custom text at the selected position
+      // Resize logo to max 300x300 while maintaining aspect ratio
+      let logoWidth = logoImg.width;
+      let logoHeight = logoImg.height;
+      const maxLogoSize = 300;
+
+      // Check if the logo exceeds 300px in either dimension
+      if (logoWidth > maxLogoSize || logoHeight > maxLogoSize) {
+        const aspectRatio = logoWidth / logoHeight;
+        if (logoWidth > logoHeight) {
+          logoWidth = maxLogoSize;
+          logoHeight = logoWidth / aspectRatio;
+        } else {
+          logoHeight = maxLogoSize;
+          logoWidth = logoHeight * aspectRatio;
+        }
+      }
+
+      // Determine the position for the logo
+      switch (logoPosition) {
+        case 'top-left':
+          x = 10;
+          y = 10;
+          break;
+        case 'top-right':
+          x = canvasWidth - logoWidth - 10;
+          y = 10;
+          break;
+        case 'bottom-left':
+          x = 10;
+          y = canvasHeight - logoHeight - 10;
+          break;
+        case 'bottom-right':
+          x = canvasWidth - logoWidth - 10;
+          y = canvasHeight - logoHeight - 10;
+          break;
+        case 'center':
+          x = (canvasWidth - logoWidth) / 2;
+          y = (canvasHeight - logoHeight) / 2;
+          break;
+      }
+
+      // Draw the logo on the canvas
+      ctx.drawImage(logoImg, x, y, logoWidth, logoHeight);
+    }
+
+    // 6. Draw the custom text at the selected position
     drawText(ctx);
 
-    // 6. Display the canvas and download button
+    // 7. Display the canvas and download button
     canvas.style.display = 'block';
     document.getElementById('downloadButton').style.display = 'block';
   }
 
-
+  // Listen for changes in the logo position and update the canvas immediately
+  document.getElementById('logoPosition').addEventListener('change', function() {
+    renderImageWithBlur();  // Update canvas when logo position changes
+  });
 
   // Handle canvas click events depending on the current mode
   function handleCanvasClick(e) {
