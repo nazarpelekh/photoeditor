@@ -19,6 +19,120 @@
 
   <link rel="manifest" href="site.webmanifest">
   <meta name="theme-color" content="#fafafa">
+
+  <!--<style>
+    @font-face {
+      font-family: 'Plus Jakarta Sans';
+      src: url('/fonts/PlusJakartaSans-Regular.woff2') format('woff2'),
+      url('/fonts/PlusJakartaSans-Regular.woff') format('woff');
+      font-weight: normal;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    @font-face {
+      font-family: 'Plus Jakarta Sans';
+      src: url('/fonts/PlusJakartaSans-BoldItalic.woff2') format('woff2'),
+      url('/fonts/PlusJakartaSans-BoldItalic.woff') format('woff');
+      font-weight: bold;
+      font-style: italic;
+      font-display: swap;
+    }
+
+    @font-face {
+      font-family: 'Plus Jakarta Sans';
+      src: url('/fonts/PlusJakartaSans-Bold.woff2') format('woff2'),
+      url('/fonts/PlusJakartaSans-Bold.woff') format('woff');
+      font-weight: bold;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    @font-face {
+      font-family: 'Plus Jakarta Sans';
+      src: url('/fonts/PlusJakartaSans-Italic.woff2') format('woff2'),
+      url('/fonts/PlusJakartaSans-Italic.woff') format('woff');
+      font-weight: normal;
+      font-style: italic;
+      font-display: swap;
+    }
+
+    @font-face {
+      font-family: 'Richmond Text';
+      src: url('/fonts/RichmondText-Regular.woff2') format('woff2'),
+      url('/fonts/RichmondText-Regular.woff') format('woff');
+      font-weight: normal;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    @font-face {
+      font-family: 'Richmond Display';
+      src: url('/fonts/RichmondDisplay-RegularItalic.woff2') format('woff2'),
+      url('/fonts/RichmondDisplay-RegularItalic.woff') format('woff');
+      font-weight: normal;
+      font-style: italic;
+      font-display: swap;
+    }
+
+    @font-face {
+      font-family: 'Richmond Display';
+      src: url('/fonts/RichmondDisplay-Bold.woff2') format('woff2'),
+      url('/fonts/RichmondDisplay-Bold.woff') format('woff');
+      font-weight: bold;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    @font-face {
+      font-family: 'Richmond Display';
+      src: url('/fonts/RichmondDisplay-SemiBoldItalic.woff2') format('woff2'),
+      url('/fonts/RichmondDisplay-SemiBoldItalic.woff') format('woff');
+      font-weight: bold;
+      font-style: italic;
+      font-display: swap;
+    }
+
+    @font-face {
+      font-family: 'Playfair Display';
+      src: url('/fonts/PlayfairDisplay-BoldItalic.woff2') format('woff2'),
+      url('/fonts/PlayfairDisplay-BoldItalic.woff') format('woff');
+      font-weight: bold;
+      font-style: italic;
+      font-display: swap;
+    }
+
+    @font-face {
+      font-family: 'Playfair Display';
+      src: url('/fonts/PlayfairDisplay-Bold.woff2') format('woff2'),
+      url('/fonts/PlayfairDisplay-Bold.woff') format('woff');
+      font-weight: bold;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    @font-face {
+      font-family: 'Playfair Display';
+      src: url('/fonts/PlayfairDisplay-Italic.woff2') format('woff2'),
+      url('/fonts/PlayfairDisplay-Italic.woff') format('woff');
+      font-weight: normal;
+      font-style: italic;
+      font-display: swap;
+    }
+
+    @font-face {
+      font-family: 'Playfair Display';
+      src: url('/fonts/PlayfairDisplay-Regular.woff2') format('woff2'),
+      url('/fonts/PlayfairDisplay-Regular.woff') format('woff');
+      font-weight: normal;
+      font-style: normal;
+      font-display: swap;
+    }
+
+
+  </style>-->
+
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;700&family=Playfair+Display:wght@400;700&family=Richmond+Display:wght@400&display=swap" rel="stylesheet">
 </head>
 
 <body>
@@ -61,6 +175,11 @@
   <div id="image_mode" class="mode-elements" style="display: none">
     <label for="blurStrength">Blur Strength:</label>
     <input type="range" id="blurStrength" min="0" max="30" value="0">
+    <br><br>
+
+    <label for="contrastRange">Contrast:</label>
+    <input type="range" id="contrastRange" min="-100" max="100" value="0">
+    <span id="contrastValue">0</span>
     <br><br>
 
     <label>Select overlay images:</label>
@@ -111,6 +230,19 @@
     <input type="file" id="uploadLogo" accept=".svg, .png, .jpg, .jpeg">
     <br><br>
 
+    <div>
+      <label>
+        <input type="radio" name="logoFilter" value="colored" checked> Colored
+      </label>
+      <label>
+        <input type="radio" name="logoFilter" value="black"> Black Logo
+      </label>
+      <label>
+        <input type="radio" name="logoFilter" value="white"> White Logo
+      </label>
+    </div>
+    <br>
+
     <!-- Logo position selection -->
     <label for="logoPosition">Select Logo Position:</label>
     <select id="logoPosition">
@@ -120,6 +252,7 @@
       <option value="bottom-right">Bottom Right</option>
       <option value="center">Center</option>
     </select>
+    <br><br>
   </div>
 
   <canvas id="imageCanvas" style="display:none;"></canvas>
@@ -139,6 +272,8 @@
   let fontColor = '#ffffff'; // Default font color
   let mode = 'text'; // Default mode is text positioning
   let overlayImageSelection = 'image1'; // Default overlay image
+  let contrastValue = 0; // Default contrast value
+  let logoFilter = 'colored'; // Default logo filter
 
   let overlayImages = {};  // Store overlay images here
   let overlayImageOpacity = { image1: 0.2, image2: 0.2, image3: 0.2, image4: 0.2, image5: 0.2, image6: 0.2 }; // Default opacity for each image
@@ -198,7 +333,7 @@
     },
     toolbar: 'undo redo | bold italic | fontfamily',
     menubar: false,
-    font_family_formats: 'Arial=arial,helvetica,sans-serif; AkrutiKndPadmini=Akpdmi-n',
+    font_family_formats: 'Arial=arial,helvetica,sans-serif; Plus Jakarta Sans=Plus Jakarta Sans, sans-serif; Richmond Display=Richmond Display, serif; Playfair Display=Playfair Display, serif;',
     default_font_stack: ['Arial'],
     height: 200,
   });
@@ -398,14 +533,15 @@
     // 1. Draw the uploaded image to the canvas (scaled)
     // ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
 
-    // 2. Apply blur to the entire image by drawing the image again with the blur filter
     ctx.filter = `blur(${blurStrength}px)`;  // Apply blur based on user input
+    ctx.filter += ` contrast(${100 + contrastValue}%)`;
     ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);  // Blur with shifted and expanded size
     ctx.filter = 'none'; // Reset the filter
 
     // 3. Restore the unblurred region, if specified
     if (blurArea.width > 0 && blurArea.height > 0) {
       // Redraw the unblurred part of the image
+      ctx.filter = ` contrast(${100 + contrastValue}%)`;
       ctx.drawImage(
         img,
         blurArea.x / scaleFactor,        // Source X (same as unblurred area)
@@ -415,8 +551,10 @@
         blurArea.x,                 // Destination X (shifted -20px to the left)
         blurArea.y,                 // Destination Y (shifted -20px up)
         blurArea.width,             // Destination width (increased by 40px)
-        blurArea.height
+        blurArea.height,
+        contrastValue
       );
+      ctx.filter = 'none'; // Reset the filter
     }
 
     // 4. Draw the selected overlay images with their respective opacities
@@ -429,16 +567,56 @@
     }
 
     // 5. Draw the uploaded logo at the selected position
-    if (logoImg) {
-      const logoPosition = document.getElementById('logoPosition').value;
-      let x, y;
+    drawLogo(ctx, logoImg);
 
-      // Resize logo to max 300x300 while maintaining aspect ratio
+    // 6. Draw the custom text at the selected position
+    drawText(ctx);
+
+    // 7. Display the canvas and download button
+    canvas.style.display = 'block';
+    document.getElementById('downloadButton').style.display = 'block';
+  }
+
+  function getLogoPosition(canvas, logoWidth, logoHeight) {
+    const logoPosition = document.getElementById('logoPosition').value; // Get selected logo position
+    let x, y;
+
+    switch (logoPosition) {
+      case 'top-left':
+        x = 10;
+        y = 10;
+        break;
+      case 'top-right':
+        x = canvas.width - logoWidth - 10;
+        y = 10;
+        break;
+      case 'bottom-left':
+        x = 10;
+        y = canvas.height - logoHeight - 10;
+        break;
+      case 'bottom-right':
+        x = canvas.width - logoWidth - 10;
+        y = canvas.height - logoHeight - 10;
+        break;
+      case 'center':
+        x = (canvas.width - logoWidth) / 2;
+        y = (canvas.height - logoHeight) / 2;
+        break;
+      default:
+        x = 10; // Default to top-left if no position is selected
+        y = 10;
+    }
+
+    return { x, y };
+  }
+
+  function drawLogo(ctx, logoImg) {
+    if (logoImg) {
       let logoWidth = logoImg.width;
       let logoHeight = logoImg.height;
-      const maxLogoSize = 300;
+      const maxLogoSize = 200;
 
-      // Check if the logo exceeds 300px in either dimension
+      // Resize logo to a max of 200x200 while maintaining aspect ratio
       if (logoWidth > maxLogoSize || logoHeight > maxLogoSize) {
         const aspectRatio = logoWidth / logoHeight;
         if (logoWidth > logoHeight) {
@@ -450,41 +628,73 @@
         }
       }
 
-      // Determine the position for the logo
-      switch (logoPosition) {
-        case 'top-left':
-          x = 10;
-          y = 10;
-          break;
-        case 'top-right':
-          x = canvasWidth - logoWidth - 10;
-          y = 10;
-          break;
-        case 'bottom-left':
-          x = 10;
-          y = canvasHeight - logoHeight - 10;
-          break;
-        case 'bottom-right':
-          x = canvasWidth - logoWidth - 10;
-          y = canvasHeight - logoHeight - 10;
-          break;
-        case 'center':
-          x = (canvasWidth - logoWidth) / 2;
-          y = (canvasHeight - logoHeight) / 2;
-          break;
+      // Get the position for the logo
+      const { x, y } = getLogoPosition(ctx.canvas, logoWidth, logoHeight);
+
+      // Apply the selected logo filter
+      const logoFilter = document.querySelector('input[name="logoFilter"]:checked').value; // Get the selected filter
+      ctx.save(); // Save the current canvas state
+
+      if (logoFilter === 'black') {
+        ctx.fillStyle = 'black';
+        ctx.fillRect(x, y, logoWidth, logoHeight); // Fill with black
+        // ctx.globalCompositeOperation = 'destination-atop'; // Mask with the logo
+      } else if (logoFilter === 'white') {
+        ctx.fillStyle = 'white';
+        ctx.fillRect(x, y, logoWidth, logoHeight); // Fill with white
+        // ctx.globalCompositeOperation = 'destination-atop'; // Mask with the logo
       }
 
-      // Draw the logo on the canvas
+      // Draw the logo
       ctx.drawImage(logoImg, x, y, logoWidth, logoHeight);
+      ctx.restore(); // Restore the previous state of the canvas
+    }
+  }
+
+  // Add event listener for logo filter radio buttons
+  document.querySelectorAll('input[name="logoFilter"]').forEach((radio) => {
+    radio.addEventListener('change', function() {
+      updateLogo(); // Function to only update the logo
+    });
+  });
+
+  function updateLogo() {
+    const canvas = document.getElementById('imageCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // Calculate logo size
+    let logoWidth = logoImg.width;
+    let logoHeight = logoImg.height;
+    const maxLogoSize = 200;
+
+    // Resize if necessary
+    if (logoWidth > maxLogoSize || logoHeight > maxLogoSize) {
+      const aspectRatio = logoWidth / logoHeight;
+      if (logoWidth > logoHeight) {
+        logoWidth = maxLogoSize;
+        logoHeight = logoWidth / aspectRatio;
+      } else {
+        logoHeight = maxLogoSize;
+        logoWidth = logoHeight * aspectRatio;
+      }
     }
 
-    // 6. Draw the custom text at the selected position
-    drawText(ctx);
+    // Get the position for the logo
+    const { x, y } = getLogoPosition(canvas, logoWidth, logoHeight);
 
-    // 7. Display the canvas and download button
-    canvas.style.display = 'block';
-    document.getElementById('downloadButton').style.display = 'block';
+    // Clear previous logo area
+    ctx.clearRect(x, y, logoWidth, logoHeight);
+
+    // Draw the logo with the selected filter
+    drawLogo(ctx, logoImg); // This will handle the drawing with the filter applied
   }
+
+  // Add event listener for contrast range input
+  document.getElementById('contrastRange').addEventListener('input', function() {
+    contrastValue = parseInt(this.value); // Get the contrast value
+    document.getElementById('contrastValue').innerText = contrastValue; // Update the display
+    renderImageWithBlur(); // Re-render the image to apply contrast
+  });
 
   // Listen for changes in the logo position and update the canvas immediately
   document.getElementById('logoPosition').addEventListener('change', function() {
