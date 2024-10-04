@@ -226,21 +226,25 @@
   </div>
 
   <div id="logoElements" class="mode-elements" style="display:none;">
-    <label for="uploadLogo">Upload Logo (SVG, PNG, JPEG):</label>
-    <input type="file" id="uploadLogo" accept=".svg, .png, .jpg, .jpeg">
-    <br><br>
-
     <div>
+      <h3>Select a Logo:</h3>
       <label>
-        <input type="radio" name="logoFilter" value="colored" checked> Colored
+        <input type="radio" name="staticLogo" value="noLogo" checked> NO LOGO
       </label>
       <label>
-        <input type="radio" name="logoFilter" value="black"> Black Logo
+        <input type="radio" name="staticLogo" value="logo1"> Logo 1
       </label>
       <label>
-        <input type="radio" name="logoFilter" value="white"> White Logo
+        <input type="radio" name="staticLogo" value="logo2"> Logo 2
+      </label>
+      <label>
+        <input type="radio" name="staticLogo" value="logo3"> Logo 3
+      </label>
+      <label>
+        <input type="file" id="uploadLogo" accept="image/*"> Upload Custom Logo
       </label>
     </div>
+
     <br>
 
     <!-- Logo position selection -->
@@ -278,13 +282,29 @@
   let overlayImages = {};  // Store overlay images here
   let overlayImageOpacity = { image1: 0.2, image2: 0.2, image3: 0.2, image4: 0.2, image5: 0.2, image6: 0.2 }; // Default opacity for each image
   let staticOverlayImages = {
-    image1: './img/GRAIN-1.jpg',  // Image 1 link
-    image2: './img/GRAIN-2.jpg',  // Image 2 link
-    image3: './img/GRAIN-3.jpg',  // Image 3 link
-    image4: './img/GRADIENT.jpg',  // Image 4 link
-    image5: './img/GRADIENT-1.jpg',  // Image 5 link
-    image6: './img/GRADIENT-4.jpg',  // Image 6 link
-  };
+    image1: './img/GRAIN-1.jpg',
+    image2: './img/GRAIN-2.jpg',
+    image3: './img/GRAIN-3.jpg',
+    image4: './img/GRADIENT.jpg',
+    image5: './img/GRADIENT-1.jpg',
+    image6: './img/GRADIENT-4.jpg',
+  }
+
+  const staticLogos = {
+    logo1: './img/logo.svg',
+    logo2: './img/logo-black.svg',
+    logo3: './img/logo-white.svg',
+  }
+  let uploadedLogo = null;
+
+
+  // Add event listener for static logo selection
+  document.querySelectorAll('input[name="staticLogo"]').forEach((radio) => {
+    radio.addEventListener('change', function() {
+      uploadedLogo = null; // Clear the uploaded logo when a static logo is selected
+      renderImageWithBlur(); // Re-render the image
+    });
+  });
 
   // Handle the logo upload
   document.getElementById('uploadLogo').addEventListener('change', function(event) {
@@ -293,14 +313,17 @@
 
     const reader = new FileReader();
     reader.onload = function(e) {
-      logoImg = new Image();
-      logoImg.onload = function() {
-        renderImageWithBlur();  // Re-render with the logo image
+      uploadedLogo = new Image();
+      uploadedLogo.onload = function() {
+        // Reset static logo selection to "NO LOGO"
+        document.querySelector('input[name="staticLogo"][value="noLogo"]').checked = true;
+        renderImageWithBlur(); // Render the image with the uploaded logo
       };
-      logoImg.src = e.target.result;  // Load the uploaded logo image
+      uploadedLogo.src = e.target.result;
     };
     reader.readAsDataURL(file);
   });
+
 
   // Handle the checkbox selections for overlay images
   document.querySelectorAll('input[name="overlayImage"]').forEach(checkbox => {
@@ -567,7 +590,19 @@
     }
 
     // 5. Draw the uploaded logo at the selected position
-    drawLogo(ctx, logoImg);
+    if (uploadedLogo) {
+      drawLogo(ctx, uploadedLogo);
+    } else {
+      const selectedLogoKey = document.querySelector('input[name="staticLogo"]:checked').value;
+      if (selectedLogoKey !== 'noLogo') {
+        let selectedLogoSrc = staticLogos[selectedLogoKey];
+        const staticLogo = new Image();
+        staticLogo.onload = function() {
+          drawLogo(ctx, staticLogo);
+        };
+        staticLogo.src = selectedLogoSrc;
+      }
+    }
 
     // 6. Draw the custom text at the selected position
     drawText(ctx);
@@ -611,43 +646,22 @@
   }
 
   function drawLogo(ctx, logoImg) {
+    // Similar drawing logic as before, but now it uses the logoImg provided
     if (logoImg) {
       let logoWidth = logoImg.width;
       let logoHeight = logoImg.height;
-      const maxLogoSize = 200;
+      const maxLogoWidth = 150;
 
-      // Resize logo to a max of 200x200 while maintaining aspect ratio
-      if (logoWidth > maxLogoSize || logoHeight > maxLogoSize) {
+      // Resize logo to a max width of 150px while maintaining aspect ratio
+      if (logoWidth > maxLogoWidth) {
         const aspectRatio = logoWidth / logoHeight;
-        if (logoWidth > logoHeight) {
-          logoWidth = maxLogoSize;
-          logoHeight = logoWidth / aspectRatio;
-        } else {
-          logoHeight = maxLogoSize;
-          logoWidth = logoHeight * aspectRatio;
-        }
+        logoWidth = maxLogoWidth;
+        logoHeight = logoWidth / aspectRatio; // Adjust height based on aspect ratio
       }
 
-      // Get the position for the logo
       const { x, y } = getLogoPosition(ctx.canvas, logoWidth, logoHeight);
 
-      // Apply the selected logo filter
-      const logoFilter = document.querySelector('input[name="logoFilter"]:checked').value; // Get the selected filter
-      ctx.save(); // Save the current canvas state
-
-      if (logoFilter === 'black') {
-        ctx.fillStyle = 'black';
-        ctx.fillRect(x, y, logoWidth, logoHeight); // Fill with black
-        // ctx.globalCompositeOperation = 'destination-atop'; // Mask with the logo
-      } else if (logoFilter === 'white') {
-        ctx.fillStyle = 'white';
-        ctx.fillRect(x, y, logoWidth, logoHeight); // Fill with white
-        // ctx.globalCompositeOperation = 'destination-atop'; // Mask with the logo
-      }
-
-      // Draw the logo
       ctx.drawImage(logoImg, x, y, logoWidth, logoHeight);
-      ctx.restore(); // Restore the previous state of the canvas
     }
   }
 
