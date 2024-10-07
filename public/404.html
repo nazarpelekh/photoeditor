@@ -54,8 +54,44 @@
 </head>
 
 <body>
-  <h1>Page Not Found</h1>
-  <p>Sorry, but the page you were trying to view does not exist.</p>
+  <script>
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    document.body.appendChild(canvas);
+
+    const img = new Image();
+    img.src = './img/processed-image-blured.png';
+    img.onload = () => {
+      canvas.width = img.width;
+      canvas.height = img.height;
+
+      // Draw the original image
+      ctx.drawImage(img, 0, 0);
+
+      // Create an offscreen canvas for the effect
+      const effectCanvas = document.createElement('canvas');
+      effectCanvas.width = canvas.width;
+      effectCanvas.height = canvas.height;
+      const effectCtx = effectCanvas.getContext('2d');
+
+      // Draw the scan lines
+      const lineHeight = 2; // Adjust for thicker/thinner lines
+      const gap = 1; // Adjust for more/less space between lines
+      effectCtx.fillStyle = 'rgba(0, 255, 0, 0.2)'; // Adjust color and opacity
+
+      for (let y = 0; y < canvas.height; y += lineHeight + gap) {
+        effectCtx.fillRect(0, y, canvas.width, lineHeight);
+      }
+
+      // Apply the effect to the main canvas
+      ctx.globalCompositeOperation = 'overlay';
+      ctx.drawImage(effectCanvas, 0, 0);
+
+      // Reset composite operation
+      ctx.globalCompositeOperation = 'source-over';
+    };
+
+  </script>
 </body>
 
 </html>

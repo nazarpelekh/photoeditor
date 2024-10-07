@@ -153,9 +153,12 @@
   <label>
     <input type="radio" name="mode" value="logo"> Logo Mode
   </label>
+  <label>
+    <input type="radio" name="mode" value="figure"> Figure Mode
+  </label>
   <br><br>
 
-  <div id="text_mode" class="mode-elements">
+  <div id="text-mode" class="mode-elements">
     <!-- Input for font size -->
     <label for="fontSizeRange">Font Size:</label>
     <input type="range" id="fontSizeRange" min="10" max="100" value="30">
@@ -172,7 +175,7 @@
 
   </div>
 
-  <div id="image_mode" class="mode-elements" style="display: none">
+  <div id="blur-mode" class="mode-elements" style="display: none">
     <label for="blurStrength">Blur Strength:</label>
     <input type="range" id="blurStrength" min="0" max="30" value="0">
     <br><br>
@@ -225,7 +228,32 @@
     <br><br>
   </div>
 
-  <div id="logoElements" class="mode-elements" style="display:none;">
+  <div id="figure-mode" class="mode-elements" style="display:none;">
+    <h3>Select a Figure:</h3>
+    <label>
+      <input type="radio" name="figure" value="noFigure" checked> No Figure
+    </label>
+    <label>
+      <input type="radio" name="figure" value="figure1"> Figure 1
+    </label>
+    <label>
+      <input type="radio" name="figure" value="figure2"> Figure 2
+    </label>
+    <label>
+      <input type="radio" name="figure" value="figure3"> Figure 3
+    </label>
+    <br><br>
+
+    <!-- Scale Range Input -->
+    <div>
+      <label for="figureScale">Scale Figure:</label>
+      <input type="range" id="figureScale" name="figureScale" min="0.5" max="5" step="0.1" value="1">
+      <span id="figureScaleValue">1x</span>
+    </div>
+  </div>
+
+
+  <div id="logo-mode" class="mode-elements" style="display:none;">
     <div>
       <h3>Select a Logo:</h3>
       <label>
@@ -266,6 +294,8 @@
 
 <script src="https://cdn.tiny.cloud/1/hw35wh74adbpr4x0uc9ngxdc8yxqbh0uazjhujo98kaqrou9/tinymce/7/tinymce.min.js" referrerpolicy="origin"></script>
 <script>
+  const canvas = document.getElementById('imageCanvas');
+
   let img, overlayImg = new Image(), isDrawing = false, isResizing = false;
   let logoImg;
   let startX, startY, rectWidth, rectHeight;
@@ -277,7 +307,6 @@
   let mode = 'text'; // Default mode is text positioning
   let overlayImageSelection = 'image1'; // Default overlay image
   let contrastValue = 0; // Default contrast value
-  let logoFilter = 'colored'; // Default logo filter
 
   let overlayImages = {};  // Store overlay images here
   let overlayImageOpacity = { image1: 0.2, image2: 0.2, image3: 0.2, image4: 0.2, image5: 0.2, image6: 0.2 }; // Default opacity for each image
@@ -297,6 +326,60 @@
   }
   let uploadedLogo = null;
 
+  let selectedFigure = null;
+  let figurePosition = { x: 0, y: 0 };
+  let isFigureSelected = false;
+
+  const figures = {
+    figure1: './img/Layer_1.svg',
+    figure2: './img/Layer_1.svg',
+    figure3: './img/Layer_1.svg'
+  };
+  let figureScale = 1;
+
+  // Get references to the scale input and display elements
+  const figureScaleInput = document.getElementById('figureScale');
+  const figureScaleValueDisplay = document.getElementById('figureScaleValue');
+
+
+  // Handle positioning the figure when in "Figure Mode"
+  canvas.addEventListener('click', function(event) {
+    if (mode === 'figure' && isFigureSelected) {
+      const rect = canvas.getBoundingClientRect();
+      figurePosition.x = event.clientX - rect.left;
+      figurePosition.y = event.clientY - rect.top;
+      renderImageWithBlur(); // Redraw the canvas with the new figure position
+    }
+  });
+
+  // Event listener for figure selection
+  document.querySelectorAll('input[name="figure"]').forEach((radio) => {
+    radio.addEventListener('change', function() {
+      const selectedFigureKey = this.value;
+      if (selectedFigureKey === 'noFigure') {
+        // If "No Figure" is selected
+        selectedFigure = null;
+        isFigureSelected = false;
+        renderImageWithBlur(); // Redraw the canvas without the figure
+      } else {
+        // Load the selected figure
+        selectedFigure = new Image();
+        selectedFigure.src = figures[selectedFigureKey];
+        isFigureSelected = true; // Enable figure positioning
+        selectedFigure.onload = function() {
+          renderImageWithBlur(); // Redraw with the new figure
+        };
+      }
+    });
+  });
+
+
+  // Add event listener to the scale input
+  figureScaleInput.addEventListener('input', function() {
+    figureScale = parseFloat(this.value);
+    figureScaleValueDisplay.textContent = `${figureScale}x`;
+    renderImageWithBlur(); // Redraw the canvas with the new scale
+  });
 
   // Add event listener for static logo selection
   document.querySelectorAll('input[name="staticLogo"]').forEach((radio) => {
@@ -472,20 +555,20 @@
 
   // Function to update the visibility of elements based on the active mode
   function updateVisibility() {
+
     const activeMode = document.querySelector('input[name="mode"]:checked').value;
 
-    if (activeMode === 'text') {
-      textElements.style.display = 'block';
-      blurElements.style.display = 'none';
-      logoElements.style.display = 'none';
-    } else if (activeMode === 'blur') {
-      textElements.style.display = 'none';
-      blurElements.style.display = 'block';
-      logoElements.style.display = 'none';
-    } else if (activeMode === 'logo') {
-      textElements.style.display = 'none';
-      blurElements.style.display = 'none';
-      logoElements.style.display = 'block';
+    const modeElements = document.querySelectorAll('.mode-elements');
+
+    modeElements.forEach(element => {
+      element.style.display = 'none';
+    });
+
+    console.log(activeMode)
+
+
+    if (document.getElementById(activeMode + '-mode')) {
+      document.getElementById(activeMode + '-mode').style.display = 'block';
     }
   }
 
@@ -535,7 +618,6 @@
 
   // Function to render the image with a blur, clear area, overlay image, and text
   function renderImageWithBlur() {
-    const canvas = document.getElementById('imageCanvas');
     const ctx = canvas.getContext('2d');
 
     // Scale the image if larger than 800px
@@ -560,6 +642,11 @@
     ctx.filter += ` contrast(${100 + contrastValue}%)`;
     ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);  // Blur with shifted and expanded size
     ctx.filter = 'none'; // Reset the filter
+
+    // Draw the selected figure if in "Figure Mode"
+    if (mode === 'figure' && isFigureSelected && selectedFigure) {
+      drawFigure(ctx, selectedFigure, figurePosition);
+    }
 
     // 3. Restore the unblurred region, if specified
     if (blurArea.width > 0 && blurArea.height > 0) {
@@ -611,6 +698,29 @@
     canvas.style.display = 'block';
     document.getElementById('downloadButton').style.display = 'block';
   }
+
+  function drawFigure(ctx, figureImg, position) {
+    if (figureImg.complete) {
+      // Calculate scaled dimensions
+      const originalWidth = figureImg.width;
+      const originalHeight = figureImg.height;
+      const aspectRatio = originalWidth / originalHeight;
+
+      // Apply scale factor
+      let figureWidth = originalWidth * figureScale;
+      let figureHeight = figureWidth / aspectRatio;
+
+      // Draw the figure at the scaled size
+      ctx.drawImage(figureImg, position.x, position.y, figureWidth, figureHeight);
+    } else {
+      // Ensure the image is drawn once it's loaded
+      figureImg.onload = function() {
+        drawFigure(ctx, figureImg, position);
+      };
+    }
+  }
+
+
 
   function getLogoPosition(canvas, logoWidth, logoHeight) {
     const logoPosition = document.getElementById('logoPosition').value; // Get selected logo position
@@ -673,7 +783,6 @@
   });
 
   function updateLogo() {
-    const canvas = document.getElementById('imageCanvas');
     const ctx = canvas.getContext('2d');
 
     // Calculate logo size
@@ -717,7 +826,6 @@
 
   // Handle canvas click events depending on the current mode
   function handleCanvasClick(e) {
-    const canvas = document.getElementById('imageCanvas');
     const rect = canvas.getBoundingClientRect();
     const mouseX = e.clientX - rect.left;
     const mouseY = e.clientY - rect.top;
@@ -734,7 +842,6 @@
   function handleMouseDown(e) {
     if (mode !== 'blur') return; // Only allow drawing in blur mode
 
-    const canvas = document.getElementById('imageCanvas');
     const rect = canvas.getBoundingClientRect();
     startX = e.clientX - rect.left;
     startY = e.clientY - rect.top;
@@ -749,7 +856,6 @@
   function handleMouseMove(e) {
     if (!isDrawing && !isResizing) return;
 
-    const canvas = document.getElementById('imageCanvas');
     const ctx = canvas.getContext('2d');
     const rect = canvas.getBoundingClientRect();
 
@@ -804,7 +910,6 @@
   }
 
   // Attach event listeners to the canvas for text positioning and blur area drawing
-  const canvas = document.getElementById('imageCanvas');
   canvas.addEventListener('mousedown', handleMouseDown);
   canvas.addEventListener('mousemove', handleMouseMove);
   canvas.addEventListener('mouseup', handleMouseUp);
@@ -812,7 +917,6 @@
 
   // Download button functionality
   document.getElementById('downloadButton').addEventListener('click', function() {
-    const canvas = document.getElementById('imageCanvas');
     const link = document.createElement('a');
     link.href = canvas.toDataURL('image/png');
     link.download = 'processed-image.png';
