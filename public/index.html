@@ -374,11 +374,14 @@
   });
 
 
-  // Add event listener to the scale input
+  // Event listener for figure scaling
   figureScaleInput.addEventListener('input', function() {
+    console.log(this.value)
     figureScale = parseFloat(this.value);
     figureScaleValueDisplay.textContent = `${figureScale}x`;
-    renderImageWithBlur(); // Redraw the canvas with the new scale
+    if (isFigureSelected && selectedFigure) {
+      renderImageWithBlur(); // Redraw the canvas with the new scale
+    }
   });
 
   // Add event listener for static logo selection
@@ -444,12 +447,12 @@
     height: 200,
   });
 
-  // Handle checkbox selection for overlay images
-  document.querySelectorAll('input[name="overlayImage"]').forEach((checkbox) => {
-    checkbox.addEventListener('change', function() {
-      renderImageWithBlur(); // Re-render the image when any checkbox is toggled
-    });
-  });
+  // // Handle checkbox selection for overlay images
+  // document.querySelectorAll('input[name="overlayImage"]').forEach((checkbox) => {
+  //   checkbox.addEventListener('change', function() {
+  //     renderImageWithBlur(); // Re-render the image when any checkbox is toggled
+  //   });
+  // });
 
   function drawText(ctx) {
     // Get the HTML content from TinyMCE or the custom editor
@@ -643,8 +646,8 @@
     ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);  // Blur with shifted and expanded size
     ctx.filter = 'none'; // Reset the filter
 
-    // Draw the selected figure if in "Figure Mode"
-    if (mode === 'figure' && isFigureSelected && selectedFigure) {
+    // 2. Draw the selected figure if in "Figure Mode"
+    if (selectedFigure) {
       drawFigure(ctx, selectedFigure, figurePosition);
     }
 
@@ -701,26 +704,55 @@
 
   function drawFigure(ctx, figureImg, position) {
     if (figureImg.complete) {
-      // Calculate scaled dimensions
       const originalWidth = figureImg.width;
       const originalHeight = figureImg.height;
       const aspectRatio = originalWidth / originalHeight;
 
-      // Apply scale factor
+      // Apply scale factor to both width and height
       let figureWidth = originalWidth * figureScale;
-      let figureHeight = figureWidth / aspectRatio;
+      let figureHeight = originalHeight * figureScale;
 
-      // Draw the figure at the scaled size
-      ctx.drawImage(figureImg, position.x, position.y, figureWidth, figureHeight);
+      // Adjust position to center the figure at the click point
+      let drawX = position.x - figureWidth / 2;
+      let drawY = position.y - figureHeight / 2;
+
+      // Adjust position to stay within canvas boundaries
+      const adjustedPosition = adjustFigurePosition(drawX, drawY, figureWidth, figureHeight);
+      drawX = adjustedPosition.drawX;
+      drawY = adjustedPosition.drawY;
+
+      // Update figurePosition based on adjusted drawX and drawY
+      figurePosition.x = drawX + figureWidth / 2;
+      figurePosition.y = drawY + figureHeight / 2;
+
+      // Draw the figure
+      ctx.drawImage(figureImg, drawX, drawY, figureWidth, figureHeight);
     } else {
-      // Ensure the image is drawn once it's loaded
       figureImg.onload = function() {
         drawFigure(ctx, figureImg, position);
       };
     }
   }
 
+  function adjustFigurePosition(drawX, drawY, figureWidth, figureHeight) {
+    const canvas = document.getElementById('imageCanvas');
 
+    // Ensure the figure doesn't go beyond the canvas edges
+    if (drawX < 0) {
+      drawX = 0;
+    }
+    if (drawY < 0) {
+      drawY = 0;
+    }
+    if (drawX + figureWidth > canvas.width) {
+      drawX = canvas.width - figureWidth;
+    }
+    if (drawY + figureHeight > canvas.height) {
+      drawY = canvas.height - figureHeight;
+    }
+
+    return { drawX, drawY };
+  }
 
   function getLogoPosition(canvas, logoWidth, logoHeight) {
     const logoPosition = document.getElementById('logoPosition').value; // Get selected logo position
