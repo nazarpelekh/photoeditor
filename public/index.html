@@ -141,7 +141,14 @@
   <input type="file" id="uploadImage" accept="image/*">
   <br><br>
 
-
+  <!-- Output Size Selection -->
+  <label>Select Output Size:
+    <input type="radio" name="outputSize" value="1920x1080"> 1920 x 1080
+  </label>
+  <label>
+    <input type="radio" name="outputSize" value="1080x1080" checked> 1080 x 1080
+  </label>
+  <br><br>
 
   <!-- Mode selector for choosing between Text and Blur Area -->
   <label>
@@ -161,7 +168,7 @@
   <div id="text-mode" class="mode-elements">
     <!-- Input for font size -->
     <label for="fontSizeRange">Font Size:</label>
-    <input type="range" id="fontSizeRange" min="10" max="100" value="30">
+    <input type="range" id="fontSizeRange" min="16" max="100" value="24">
     &nbsp;
     <!-- Font color picker -->
     <label for="fontColor">Font Color:</label>
@@ -296,11 +303,14 @@
 <script>
   const canvas = document.getElementById('imageCanvas');
 
-  let img, overlayImg = new Image(), isDrawing = false, isResizing = false;
+  let img = null,
+    overlayImg = new Image(),
+    isDrawing = false,
+    isResizing = false;
   let logoImg;
   let startX, startY, rectWidth, rectHeight;
   let blurArea = { x: 0, y: 0, width: 0, height: 0 };
-  let textPosition = { x: 0, y: 0 }; // Position of the text
+  let textPosition = { x: 0, y: 0 }; // Default to center
   let fontSize = 30; // Default font size
   let fontFamily = 'Arial'; // Default font family
   let fontColor = '#ffffff'; // Default font color
@@ -327,7 +337,7 @@
   let uploadedLogo = null;
 
   let selectedFigure = null;
-  let figurePosition = { x: 0, y: 0 };
+  let figurePosition = { x: 0.5, y: 0.5 };
   let isFigureSelected = false;
 
   const figures = {
@@ -341,6 +351,39 @@
   const figureScaleInput = document.getElementById('figureScale');
   const figureScaleValueDisplay = document.getElementById('figureScaleValue');
 
+  let outputSize = document.querySelector('input[name="outputSize"]:checked').value; // Default output size
+  let previousOutputSize = outputSize; // Keep track of the previous output size
+
+  // Add event listeners to update the output size when the user changes the selection
+  document.querySelectorAll('input[name="outputSize"]').forEach((radio) => {
+    radio.addEventListener('change', function() {
+      const newSize = this.value;
+
+      // If an image is uploaded, check if it meets the minimum size for the new mode
+      if (img) {
+        let minWidth, minHeight;
+        if (newSize === '1920x1080') {
+          minWidth = 1920;
+          minHeight = 1080;
+        } else if (newSize === '1080x1080') {
+          minWidth = 1080;
+          minHeight = 1080;
+        }
+
+        if (img.width < minWidth || img.height < minHeight) {
+          alert(`Cannot change to ${newSize} mode. The uploaded image is smaller than ${minWidth}x${minHeight}px.`);
+          // Revert the selection back to the previous output size
+          document.querySelector(`input[name="outputSize"][value="${previousOutputSize}"]`).checked = true;
+          return;
+        }
+      }
+
+      // If no image is uploaded or the image is large enough, proceed
+      outputSize = newSize; // Update the output size
+      previousOutputSize = newSize; // Update the previous output size
+      renderImageWithBlur(); // Re-render the image with new output size
+    });
+  });
 
   // Handle positioning the figure when in "Figure Mode"
   canvas.addEventListener('click', function(event) {
@@ -372,7 +415,6 @@
       }
     });
   });
-
 
   // Event listener for figure scaling
   figureScaleInput.addEventListener('input', function() {
@@ -463,26 +505,126 @@
       const tempDiv = document.createElement('div');
       tempDiv.innerHTML = customTextHTML;
 
-      // Extract and parse each child node (text, <b>, <i> tags, etc.)
-      const nodes = tempDiv.childNodes;
+      // Adjust positions if using ratios
+      let x = textPosition.x * canvas.width;
+      let y = textPosition.y * canvas.height;
 
-      let x = textPosition.x;
-      let y = textPosition.y;
+      // Set text alignment and baseline
+      ctx.textAlign = 'left'; // Align text starting from the x position
+      ctx.textBaseline = 'top'; // Text starts from the y position
 
-      // Loop through all child nodes
-      nodes.forEach(node => {
-        if (node.nodeName === 'P') {
-          // Handle <p> elements for block-level content
-          handleParagraph(ctx, node, x, y);
-          y += fontSize* 1.2; // Move to the next line after each paragraph
-        } else {
-          // Inline elements like <b>, <i>, <strong>, etc.
-          handleInlineText(ctx, node, x, y);
-        }
-      });
-      console.log(customTextHTML)
+      // Start rendering from the root node
+      const result = renderNode(ctx, tempDiv, x, y, x, true); // isFirstBlock = true
     }
   }
+
+
+  function renderNode(ctx, node, x, y, initialX, isFirstBlock) {
+    let currentX = x;
+    let currentY = y;
+
+    if (node.nodeType === Node.TEXT_NODE) {
+      const text = node.textContent;
+
+      if (text.trim() !== '') {
+        // Get the computed style for this text node
+        const computedStyle = getComputedStyleForNode(node.parentNode);
+
+        // Set font properties
+        ctx.font = computedStyle.font;
+        ctx.fillStyle = computedStyle.color;
+
+        // Measure the text width
+        const textMetrics = ctx.measureText(text);
+
+        // Draw the text
+        ctx.fillText(text, currentX, currentY);
+
+        // Update currentX for the next text segment
+        currentX += textMetrics.width;
+      }
+    } else if (node.nodeType === Node.ELEMENT_NODE) {
+      // Save the current context state
+      ctx.save();
+
+      // Apply styles if any
+      const computedStyle = getComputedStyleForNode(node);
+      ctx.font = computedStyle.font;
+      ctx.fillStyle = computedStyle.color;
+
+      // Handle block-level elements
+      if (['P', 'DIV', 'BR'].includes(node.nodeName)) {
+        if(isFirstBlock) {
+          currentY = y - (fontSize * 1.2)
+        }
+        if (!isFirstBlock) {
+          currentY += fontSize * 1.2; // Move y position down for new block
+        }
+        currentX = initialX; // Reset x to the initial x position
+
+        isFirstBlock = false; // After processing the first block, set to false
+      }
+
+      // Render child nodes
+      node.childNodes.forEach(child => {
+        const result = renderNode(ctx, child, currentX, currentY, initialX, isFirstBlock);
+        currentX = result.x;
+        currentY = result.y;
+        // We don't update isFirstBlock from child nodes to maintain correct behavior
+      });
+
+      // Restore the context state
+      ctx.restore();
+    }
+
+    return { x: currentX, y: currentY };
+  }
+
+
+  function getComputedStyleForNode(node) {
+    let fontStyle = '';
+    let fontWeight = '';
+    let nodeFontFamily = fontFamily; // Use the default font family
+    let nodeFontSize = fontSize; // Use the default font size
+    let color = fontColor; // Use the default font color
+
+    // Check for inline styles or attributes
+    if (node.style) {
+      if (node.style.fontStyle) {
+        fontStyle = node.style.fontStyle;
+      }
+      if (node.style.fontWeight) {
+        fontWeight = node.style.fontWeight;
+      }
+      if (node.style.fontFamily) {
+        nodeFontFamily = node.style.fontFamily;
+      }
+      if (node.style.fontSize) {
+        nodeFontSize = parseInt(node.style.fontSize);
+      }
+      if (node.style.color) {
+        color = node.style.color;
+      }
+    }
+
+    // Check for bold and italic tags
+    if (node.nodeName === 'B' || node.nodeName === 'STRONG') {
+      fontWeight = 'bold';
+    }
+    if (node.nodeName === 'I' || node.nodeName === 'EM') {
+      fontStyle = 'italic';
+    }
+
+    // Construct the font property
+    const font = `${fontStyle} ${fontWeight} ${nodeFontSize}px ${nodeFontFamily}`;
+
+    return {
+      font,
+      color,
+    };
+  }
+
+
 
   // Function to handle paragraph <p> nodes
   function handleParagraph(ctx, node, x, y) {
@@ -525,17 +667,37 @@
   staticImg.src = 'https://placehold.co/600x600';
 
   // Load the uploaded image
+  // Load the uploaded image
   document.getElementById('uploadImage').addEventListener('change', function(event) {
     const file = event.target.files[0];
     if (!file) return;
 
     const reader = new FileReader();
     reader.onload = function(e) {
-      img = new Image();
-      img.onload = function() {
-        renderImageWithBlur(); // Initial rendering with the uploaded image and static image overlay
+      const tempImg = new Image();
+      tempImg.onload = function() {
+        // Check if the image meets the minimum size requirements
+        let minWidth, minHeight;
+        if (outputSize === '1920x1080') {
+          minWidth = 1920;
+          minHeight = 1080;
+        } else if (outputSize === '1080x1080') {
+          minWidth = 1080;
+          minHeight = 1080;
+        }
+
+        if (tempImg.width < minWidth || tempImg.height < minHeight) {
+          alert(`Please upload an image with dimensions at least ${minWidth}x${minHeight}px for the selected mode.`);
+          // Clear the file input
+          document.getElementById('uploadImage').value = '';
+          return;
+        }
+
+        // If the image is large enough, proceed to load it
+        img = tempImg; // Store the uploaded image
+        renderImageWithBlur(); // Initial rendering with the uploaded image
       };
-      img.src = e.target.result;
+      tempImg.src = e.target.result;
     };
     reader.readAsDataURL(file);
   });
@@ -623,63 +785,111 @@
   function renderImageWithBlur() {
     const ctx = canvas.getContext('2d');
 
-    // Scale the image if larger than 800px
-    let scaleFactor = 1;
-    if (img.width > 800 || img.height > 800) {
-      scaleFactor = Math.min(800 / img.width, 800 / img.height);
+    // Determine the target canvas dimensions based on output size
+    let targetWidth, targetHeight;
+    let aspectRatio;
+
+    if (outputSize === '1920x1080') {
+      targetWidth = 1920;
+      targetHeight = 1080;
+      aspectRatio = 1920 / 1080;
+    } else if (outputSize === '1080x1080') {
+      targetWidth = 1080;
+      targetHeight = 1080;
+      aspectRatio = 1;
     }
 
-    const canvasWidth = img.width * scaleFactor;
-    const canvasHeight = img.height * scaleFactor;
-
-    canvas.width = canvasWidth;
-    canvas.height = canvasHeight;
+    // Set canvas dimensions to target dimensions
+    canvas.width = targetWidth;
+    canvas.height = targetHeight;
 
     // Clear the canvas
-    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+    ctx.clearRect(0, 0, targetWidth, targetHeight);
 
-    // 1. Draw the uploaded image to the canvas (scaled)
-    // ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
+    // Calculate the scaling factor to fit the uploaded image into the canvas while preserving aspect ratio
+    const imgAspectRatio = img.width / img.height;
+    let drawWidth, drawHeight, offsetX, offsetY;
 
-    ctx.filter = `blur(${blurStrength}px)`;  // Apply blur based on user input
-    ctx.filter += ` contrast(${100 + contrastValue}%)`;
-    ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);  // Blur with shifted and expanded size
-    ctx.filter = 'none'; // Reset the filter
-
-    // 2. Draw the selected figure if in "Figure Mode"
-    if (selectedFigure) {
-      drawFigure(ctx, selectedFigure, figurePosition);
+    if (imgAspectRatio > aspectRatio) {
+      // Image is wider than canvas aspect ratio
+      drawHeight = targetHeight;
+      drawWidth = img.width * (targetHeight / img.height);
+      offsetX = -(drawWidth - targetWidth) / 2;
+      offsetY = 0;
+    } else {
+      // Image is taller than canvas aspect ratio
+      drawWidth = targetWidth;
+      drawHeight = img.height * (targetWidth / img.width);
+      offsetX = 0;
+      offsetY = -(drawHeight - targetHeight) / 2;
     }
 
-    // 3. Restore the unblurred region, if specified
-    if (blurArea.width > 0 && blurArea.height > 0) {
-      // Redraw the unblurred part of the image
-      ctx.filter = ` contrast(${100 + contrastValue}%)`;
-      ctx.drawImage(
-        img,
-        blurArea.x / scaleFactor,        // Source X (same as unblurred area)
-        blurArea.y / scaleFactor,        // Source Y (same as unblurred area)
-        blurArea.width / scaleFactor,    // Source width (exact size, no blur offset)
-        blurArea.height / scaleFactor,   // Source height (exact size, no blur offset)
-        blurArea.x,                 // Destination X (shifted -20px to the left)
-        blurArea.y,                 // Destination Y (shifted -20px up)
-        blurArea.width,             // Destination width (increased by 40px)
-        blurArea.height,
-        contrastValue
-      );
-      ctx.filter = 'none'; // Reset the filter
-    }
+    // Apply blur and contrast filters
+    ctx.filter = `blur(${blurStrength}px) contrast(${100 + contrastValue}%)`;
 
-    // 4. Draw the selected overlay images with their respective opacities
+    // Draw the scaled image onto the canvas
+    ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
+
+    // Reset the filter
+    ctx.filter = 'none';
+
+    // Store displayed image dimensions for position calculations
+    displayedImage = {
+      x: offsetX,
+      y: offsetY,
+      width: drawWidth,
+      height: drawHeight
+    };
+
+    // Apply overlays to the blurred background
     for (let key in overlayImages) {
       const overlayImg = overlayImages[key];
-      const opacity = overlayImageOpacity[key];  // Get the opacity for the current image
-      ctx.globalAlpha = opacity;  // Apply the opacity
-      ctx.drawImage(overlayImg, 0, 0, canvasWidth, canvasHeight);
-      ctx.globalAlpha = 1;  // Reset the opacity
+      const opacity = overlayImageOpacity[key];
+      ctx.globalAlpha = opacity;
+      ctx.drawImage(overlayImg, 0, 0, targetWidth, targetHeight);
+      ctx.globalAlpha = 1;
     }
 
-    // 5. Draw the uploaded logo at the selected position
+    // Draw the figure between blurred and focused areas
+    if (selectedFigure) {
+      const adjustedFigurePosition = {
+        x: figurePosition.x * targetWidth,
+        y: figurePosition.y * targetHeight
+      };
+      drawFigure(ctx, selectedFigure, adjustedFigurePosition);
+    }
+
+    // Restore the unblurred region (focused area), if specified
+    if (blurArea.width > 0 && blurArea.height > 0) {
+      const adjustedBlurArea = {
+        x: blurArea.x * targetWidth,
+        y: blurArea.y * targetHeight,
+        width: blurArea.width * targetWidth,
+        height: blurArea.height * targetHeight
+      };
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(adjustedBlurArea.x, adjustedBlurArea.y, adjustedBlurArea.width, adjustedBlurArea.height);
+      ctx.clip();
+
+      ctx.filter = `contrast(${100 + contrastValue}%)`;
+      ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
+      ctx.filter = 'none';
+
+      // Apply overlays within the unblurred area
+      for (let key in overlayImages) {
+        const overlayImg = overlayImages[key];
+        const opacity = overlayImageOpacity[key];
+        ctx.globalAlpha = opacity;
+        ctx.drawImage(overlayImg, 0, 0, targetWidth, targetHeight);
+        ctx.globalAlpha = 1;
+      }
+
+      ctx.restore();
+    }
+
+    // Draw the logo
     if (uploadedLogo) {
       drawLogo(ctx, uploadedLogo);
     } else {
@@ -694,10 +904,14 @@
       }
     }
 
-    // 6. Draw the custom text at the selected position
+    // Adjust and draw the text
+    const adjustedTextPosition = {
+      x: textPosition.x * targetWidth,
+      y: textPosition.y * targetHeight
+    };
     drawText(ctx);
 
-    // 7. Display the canvas and download button
+    // Display the canvas and download button
     canvas.style.display = 'block';
     document.getElementById('downloadButton').style.display = 'block';
   }
@@ -787,6 +1001,7 @@
     return { x, y };
   }
 
+
   function drawLogo(ctx, logoImg) {
     // Similar drawing logic as before, but now it uses the logoImg provided
     if (logoImg) {
@@ -862,13 +1077,22 @@
     const mouseX = e.clientX - rect.left;
     const mouseY = e.clientY - rect.top;
 
+    // Calculate the position ratios relative to the canvas size
+    const positionXRatio = mouseX / canvas.width;
+    const positionYRatio = mouseY / canvas.height;
+
     if (mode === 'text') {
-      // Set text position when in text mode
-      textPosition.x = mouseX;
-      textPosition.y = mouseY;
+      // Store position ratios for text
+      textPosition = { x: positionXRatio, y: positionYRatio };
+      console.log(textPosition)
       renderImageWithBlur(); // Re-render the image with the updated text position
+    } else if (mode === 'figure' && isFigureSelected) {
+      // Store position ratios for figure
+      figurePosition = { x: positionXRatio, y: positionYRatio };
+      renderImageWithBlur(); // Re-render the image with the updated figure position
     }
   }
+
 
   // Handle mouse down for drawing blur area or moving text
   function handleMouseDown(e) {
@@ -878,15 +1102,18 @@
     startX = e.clientX - rect.left;
     startY = e.clientY - rect.top;
 
-    if (isInsideBlurArea(startX, startY)) {
-      isResizing = true; // If inside the blur area, resize it
-    } else {
-      isDrawing = true; // Otherwise, draw a new area
-    }
+    isDrawing = true;
+
+    // Store the starting position ratios
+    blurArea.x = startX / canvas.width;
+    blurArea.y = startY / canvas.height;
+    blurArea.width = 0;
+    blurArea.height = 0;
   }
 
+
   function handleMouseMove(e) {
-    if (!isDrawing && !isResizing) return;
+    if (!isDrawing) return;
 
     const ctx = canvas.getContext('2d');
     const rect = canvas.getBoundingClientRect();
@@ -894,44 +1121,26 @@
     const currentX = e.clientX - rect.left;
     const currentY = e.clientY - rect.top;
 
-    if (isDrawing) {
-      rectWidth = currentX - startX;
-      rectHeight = currentY - startY;
+    // Calculate the width and height in ratios
+    blurArea.width = (currentX - startX) / canvas.width;
+    blurArea.height = (currentY - startY) / canvas.height;
 
-      // Redraw the image and blur
-      renderImageWithBlur();
+    renderImageWithBlur();
 
-      // Draw the rectangle for the clear area
-      ctx.strokeStyle = 'red';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(startX, startY, rectWidth, rectHeight);
-    } else if (isResizing) {
-      rectWidth = currentX - blurArea.x;
-      rectHeight = currentY - blurArea.y;
-
-      renderImageWithBlur();
-      ctx.strokeStyle = 'red';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(blurArea.x, blurArea.y, rectWidth, rectHeight);
-    }
+    // Draw the rectangle for visual feedback
+    ctx.strokeStyle = 'red';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(
+      blurArea.x * canvas.width,
+      blurArea.y * canvas.height,
+      blurArea.width * canvas.width,
+      blurArea.height * canvas.height
+    );
   }
 
   function handleMouseUp(e) {
     if (isDrawing) {
       isDrawing = false;
-
-      blurArea.x = startX;
-      blurArea.y = startY;
-      blurArea.width = rectWidth;
-      blurArea.height = rectHeight;
-
-      renderImageWithBlur();
-    } else if (isResizing) {
-      isResizing = false;
-
-      blurArea.width = rectWidth;
-      blurArea.height = rectHeight;
-
       renderImageWithBlur();
     }
   }
