@@ -504,13 +504,16 @@
       ctx.textAlign = 'left'; // Align text starting from the x position
       ctx.textBaseline = 'top'; // Text starts from the y position
 
+      // Initialize lineMetrics for this text block
+      const lineMetrics = { currentLineMaxFontSize: 0 };
+
       // Start rendering from the root node
-      renderNode(ctx, tempDiv, x, y, x, true);
+      renderNode(ctx, tempDiv, x, y, x, true, {}, lineMetrics);
     }
   }
 
 
-  function renderNode(ctx, node, x, y, initialX, isFirstBlock, parentStyle = {}) {
+  function renderNode(ctx, node, x, y, initialX, isFirstBlock, parentStyle = {}, lineMetrics = { currentLineMaxFontSize: 0 }) {
     let currentX = x;
     let currentY = y;
 
@@ -520,6 +523,12 @@
       if (text.trim() !== '') {
         // Get the computed style for this text node, merging with parent styles
         const computedStyle = getComputedStyleForNode(node.parentNode, parentStyle);
+
+        // Update the current line's max font size
+        const fontSize = parseInt(computedStyle.fontSize, 10);
+        if (fontSize > lineMetrics.currentLineMaxFontSize) {
+          lineMetrics.currentLineMaxFontSize = fontSize;
+        }
 
         // Set font properties
         ctx.font = computedStyle.font;
@@ -534,9 +543,9 @@
         // Handle text decoration (e.g., underline)
         if (computedStyle.textDecoration.includes('underline')) {
           ctx.beginPath();
-          const textHeight = parseInt(computedStyle.fontSize, 10);
-          ctx.moveTo(currentX, currentY + textHeight);
-          ctx.lineTo(currentX + textMetrics.width, currentY + textHeight);
+          const underlineY = currentY + fontSize;
+          ctx.moveTo(currentX, underlineY);
+          ctx.lineTo(currentX + textMetrics.width, underlineY);
           ctx.strokeStyle = computedStyle.color;
           ctx.lineWidth = 1;
           ctx.stroke();
@@ -557,19 +566,32 @@
       ctx.fillStyle = computedStyle.color;
 
       // Handle block-level elements
-      if (['P', 'DIV', 'BR', 'H1', 'H2', 'H3', 'H4', 'H5'].includes(node.nodeName)) {
+      if (['P', 'DIV', 'H1', 'H2', 'H3', 'H4', 'H5'].includes(node.nodeName)) {
         if (!isFirstBlock) {
-          const fontSizeInPx = parseInt(computedStyle.fontSize, 10);
-          currentY += fontSizeInPx * 1.2; // Move y position down for new block
+          // Increment currentY based on the maximum font size of the previous line
+          currentY += lineMetrics.currentLineMaxFontSize * 1.2; // Adjust the multiplier as needed for spacing
         }
         currentX = initialX; // Reset x to the initial x position
 
         isFirstBlock = false; // After processing the first block, set to false
+
+        // Reset line metrics for the new block
+        lineMetrics.currentLineMaxFontSize = 0;
+      }
+
+      // Handle line breaks
+      if (node.nodeName === 'BR') {
+        // Increment currentY based on the maximum font size of the current line
+        currentY += lineMetrics.currentLineMaxFontSize * 1.2; // Adjust the multiplier as needed for spacing
+        currentX = initialX; // Reset x to the initial x position
+
+        // Reset line metrics for the new line
+        lineMetrics.currentLineMaxFontSize = 0;
       }
 
       // Render child nodes
       node.childNodes.forEach(child => {
-        const result = renderNode(ctx, child, currentX, currentY, initialX, isFirstBlock, computedStyle);
+        const result = renderNode(ctx, child, currentX, currentY, initialX, isFirstBlock, computedStyle, lineMetrics);
         currentX = result.x;
         currentY = result.y;
         // Do not update isFirstBlock to maintain correct behavior
