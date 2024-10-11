@@ -166,15 +166,6 @@
   <br><br>
 
   <div id="text-mode" class="mode-elements">
-    <!-- Input for font size -->
-    <label for="fontSizeRange">Font Size:</label>
-    <input type="range" id="fontSizeRange" min="16" max="100" value="24">
-    &nbsp;
-    <!-- Font color picker -->
-    <label for="fontColor">Font Color:</label>
-    <input type="color" id="fontColor" value="#ffffff">
-    <br><br>
-
     <!-- Input for custom text -->
     <textarea id="customTextEditor"></textarea>
     <br><br>
@@ -305,14 +296,11 @@
 
   let img = null,
     overlayImg = new Image(),
-    isDrawing = false,
-    isResizing = false;
+    isDrawing = false;
   let logoImg;
   let startX, startY, rectWidth, rectHeight;
   let blurArea = { x: 0, y: 0, width: 0, height: 0 };
   let textPosition = { x: 0, y: 0 }; // Default to center
-  let fontSize = 30; // Default font size
-  let fontFamily = 'Arial'; // Default font family
   let fontColor = '#ffffff'; // Default font color
   let mode = 'text'; // Default mode is text positioning
   let overlayImageSelection = 'image1'; // Default overlay image
@@ -482,10 +470,13 @@
         renderImageWithBlur();
       });
     },
-    toolbar: 'undo redo | bold italic | fontfamily',
+    block_formats: 'Paragraph=p; Header 1=h1; Header 2=h2; Header 3=h3',
+    toolbar: 'undo redo | h1 h2 h3 h4 h5 | bold italic | forecolor | fontfamily fontsize ' , // could add fontsizeinput instead of fontsize
     menubar: false,
     font_family_formats: 'Arial=arial,helvetica,sans-serif; Plus Jakarta Sans=Plus Jakarta Sans, sans-serif; Richmond Display=Richmond Display, serif; Playfair Display=Playfair Display, serif;',
     default_font_stack: ['Arial'],
+    font_size_formats: '12px 14px 16px 18px 20px 24px 28px 32px 36px 48px 64px 72px',
+    content_style: 'body { background-color: #f0f0f0; }',
     height: 200,
   });
 
@@ -497,7 +488,7 @@
   // });
 
   function drawText(ctx) {
-    // Get the HTML content from TinyMCE or the custom editor
+    // Get the HTML content from TinyMCE
     const customTextHTML = tinymce.get('customTextEditor').getContent();
 
     if (customTextHTML) {
@@ -514,12 +505,12 @@
       ctx.textBaseline = 'top'; // Text starts from the y position
 
       // Start rendering from the root node
-      const result = renderNode(ctx, tempDiv, x, y, x, true); // isFirstBlock = true
+      renderNode(ctx, tempDiv, x, y, x, true);
     }
   }
 
 
-  function renderNode(ctx, node, x, y, initialX, isFirstBlock) {
+  function renderNode(ctx, node, x, y, initialX, isFirstBlock, parentStyle = {}) {
     let currentX = x;
     let currentY = y;
 
@@ -527,8 +518,8 @@
       const text = node.textContent;
 
       if (text.trim() !== '') {
-        // Get the computed style for this text node
-        const computedStyle = getComputedStyleForNode(node.parentNode);
+        // Get the computed style for this text node, merging with parent styles
+        const computedStyle = getComputedStyleForNode(node.parentNode, parentStyle);
 
         // Set font properties
         ctx.font = computedStyle.font;
@@ -540,6 +531,17 @@
         // Draw the text
         ctx.fillText(text, currentX, currentY);
 
+        // Handle text decoration (e.g., underline)
+        if (computedStyle.textDecoration.includes('underline')) {
+          ctx.beginPath();
+          const textHeight = parseInt(computedStyle.fontSize, 10);
+          ctx.moveTo(currentX, currentY + textHeight);
+          ctx.lineTo(currentX + textMetrics.width, currentY + textHeight);
+          ctx.strokeStyle = computedStyle.color;
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        }
+
         // Update currentX for the next text segment
         currentX += textMetrics.width;
       }
@@ -547,18 +549,18 @@
       // Save the current context state
       ctx.save();
 
-      // Apply styles if any
-      const computedStyle = getComputedStyleForNode(node);
+      // Get the computed style for this element, merging with parent styles
+      const computedStyle = getComputedStyleForNode(node, parentStyle);
+
+      // Apply font properties
       ctx.font = computedStyle.font;
       ctx.fillStyle = computedStyle.color;
 
       // Handle block-level elements
-      if (['P', 'DIV', 'BR'].includes(node.nodeName)) {
-        if(isFirstBlock) {
-          currentY = y - (fontSize * 1.2)
-        }
+      if (['P', 'DIV', 'BR', 'H1', 'H2', 'H3', 'H4', 'H5'].includes(node.nodeName)) {
         if (!isFirstBlock) {
-          currentY += fontSize * 1.2; // Move y position down for new block
+          const fontSizeInPx = parseInt(computedStyle.fontSize, 10);
+          currentY += fontSizeInPx * 1.2; // Move y position down for new block
         }
         currentX = initialX; // Reset x to the initial x position
 
@@ -567,10 +569,10 @@
 
       // Render child nodes
       node.childNodes.forEach(child => {
-        const result = renderNode(ctx, child, currentX, currentY, initialX, isFirstBlock);
+        const result = renderNode(ctx, child, currentX, currentY, initialX, isFirstBlock, computedStyle);
         currentX = result.x;
         currentY = result.y;
-        // We don't update isFirstBlock from child nodes to maintain correct behavior
+        // Do not update isFirstBlock to maintain correct behavior
       });
 
       // Restore the context state
@@ -581,12 +583,14 @@
   }
 
 
-  function getComputedStyleForNode(node) {
-    let fontStyle = '';
-    let fontWeight = '';
-    let nodeFontFamily = fontFamily; // Use the default font family
-    let nodeFontSize = fontSize; // Use the default font size
-    let color = fontColor; // Use the default font color
+
+  function getComputedStyleForNode(node, parentStyle = {}) {
+    let fontStyle = parentStyle.fontStyle || '';
+    let fontWeight = parentStyle.fontWeight || '';
+    let nodeFontFamily = parentStyle.fontFamily || 'Arial'; // Default font family
+    let nodeFontSize = parentStyle.fontSize || '16px'; // Default font size
+    let color = parentStyle.color || '#000000'; // Default font color
+    let textDecoration = parentStyle.textDecoration || '';
 
     // Check for inline styles or attributes
     if (node.style) {
@@ -600,27 +604,53 @@
         nodeFontFamily = node.style.fontFamily;
       }
       if (node.style.fontSize) {
-        nodeFontSize = parseInt(node.style.fontSize);
+        nodeFontSize = node.style.fontSize;
       }
       if (node.style.color) {
         color = node.style.color;
       }
+      if (node.style.textDecoration) {
+        textDecoration = node.style.textDecoration;
+      }
     }
 
-    // Check for bold and italic tags
+    // Check for bold, italic, underline tags
     if (node.nodeName === 'B' || node.nodeName === 'STRONG') {
       fontWeight = 'bold';
     }
     if (node.nodeName === 'I' || node.nodeName === 'EM') {
       fontStyle = 'italic';
     }
+    if (node.nodeName === 'U') {
+      textDecoration = 'underline';
+    }
+
+    // Handle header tags with default sizes if not set
+    if (['H1', 'H2', 'H3', 'H4', 'H5'].includes(node.nodeName)) {
+      if (!node.style.fontSize) {
+        const headerSizes = {
+          H1: '32px',
+          H2: '28px',
+          H3: '24px',
+          H4: '20px',
+          H5: '16px',
+        };
+        nodeFontSize = headerSizes[node.nodeName];
+      }
+      fontWeight = 'bold';
+    }
 
     // Construct the font property
-    const font = `${fontStyle} ${fontWeight} ${nodeFontSize}px ${nodeFontFamily}`;
+    const font = `${fontStyle} ${fontWeight} ${nodeFontSize} ${nodeFontFamily}`;
 
     return {
       font,
       color,
+      textDecoration,
+      fontSize: nodeFontSize,
+      fontFamily: nodeFontFamily,
+      fontWeight,
+      fontStyle,
     };
   }
 
@@ -702,21 +732,8 @@
     reader.readAsDataURL(file);
   });
 
-  document.getElementById('fontSizeRange').addEventListener('input', function() {
-    fontSize = parseInt(this.value);
-    renderImageWithBlur(); // Re-render the image to apply new font size
-  });
-
-  document.getElementById('fontColor').addEventListener('input', function() {
-    fontColor = this.value;
-    renderImageWithBlur(); // Re-render the image to apply new font color
-  });
-
   // Get references to mode radio buttons and the elements to show/hide
   const modeRadios = document.querySelectorAll('input[name="mode"]');
-  const textElements = document.getElementById('text_mode');
-  const blurElements = document.getElementById('image_mode');
-  const logoElements = document.getElementById('logoElements')
 
   // Function to update the visibility of elements based on the active mode
   function updateVisibility() {
